@@ -1,5 +1,5 @@
 -- Scenario test data. Regenerate with $zenwave-test-scenarios (place-order-flow).
--- DDL derived from entities + modulith data.sql, not exported (Docker busy, 2026-11-25); validated in step 7.
+-- DDL derived from entities + modulith data.sql, then checked against the exported DDL (target/ddl/schema.sql, 2026-11-25): same table, columns, sequence, status check.
 -- Models: payments-processing service-all 0.2.0. Only aggregate: Payment (table payment, sequence payment_seq, increment 50).
 -- Fixed test "now" (fixed Clock, still to be added by a board task): 2026-10-14T10:00:00Z.
 -- JSON mirrors: src/test/resources/data/jpa/Payment/<k>.json, k = row position, id = 1 + (k-1)*50.

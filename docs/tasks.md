@@ -11,15 +11,16 @@ inventory, fulfillment, notifications) are boards of their own repositories; her
 and the HTTP read getPaymentStatus that catalog-inventory's reservation timer calls.
 Model paths: ZFL = ../arcadia-editions-architecture/business-flows/place-order-flow.zfl,
 ZDL = ../payments-processing-api/domain-model.zdl.
-Test data chains C-01..C-22: header of src/test/resources/data.sql (assumptions A-01..A-09 there). Data.sql derived
-from the entities and the modulith data.sql, not exported: validated in step 7.
+Test data chains C-01..C-22: header of src/test/resources/data.sql (assumptions A-01..A-09 there). Data.sql written
+from the entities and the modulith data.sql, then checked against the exported DDL.
 Approved models: payments-processing-api service-all 0.2.0 (tag release/service-all/v0.2.0); ZFL at
 arcadia-editions-architecture tag baseline/place-order-flow-<n>.
 Open proposal: P-01 (asyncapi-client.yml 0.2.0 has no FulfillmentFailed / OrderConfirmationRejected channel) blocks
 T-27..T-30.
-Baseline failures marked "to confirm in step 7" were read from the generated code, not run (no Docker in this phase).
+Baseline failures confirmed by mvn verify 2026-11-25 (overlay, full-suite command). Data.sql matches the exported DDL.
 AsyncAPI templates: the committed pom uses the zenwave default (SpringCloudStream); an uncommitted pom change switches
-to SpringKafka. T-07 follows whatever pom.xml holds when it starts.
+to SpringKafka, whose consumers need app.kafka.topics.<channel>.topic properties (without them no Spring context
+starts). T-07 follows whatever pom.xml holds when it starts.
 -->
 
 ## S0 Baseline

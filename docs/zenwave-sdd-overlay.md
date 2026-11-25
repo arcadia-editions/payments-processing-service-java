@@ -23,7 +23,7 @@ The flow also references the other contexts' ZDLs: `../orders-checkout-api`, `..
 | Domain summary | `docs/domain.md` |
 | Board of the flow in progress | `docs/tasks.md` (archived boards in `docs/tasks/`) |
 | Model gap proposals | `docs/proposals/` |
-| Test data and scenario matrix | `src/test/resources/data.sql` (header: scenario and coverage matrices, chains `C-01`..`C-22`, assumptions, the fixed test "now" `2026-10-14T10:00:00Z` read by tests through a fixed `Clock`, not yet in the code; DDL derived from entities, not exported) and `src/test/resources/data/jpa/Payment/<n>.json` |
+| Test data and scenario matrix | `src/test/resources/data.sql` (header: scenario and coverage matrices, chains `C-01`..`C-22`, assumptions, the fixed test "now" `2026-10-14T10:00:00Z` read by tests through a fixed `Clock`, not yet in the code; DDL checked against the export) and `src/test/resources/data/jpa/Payment/<n>.json` |
 | Generation script | `zenwave-scripts.zw` |
 
 **`zenwave-scripts.zw` and `pom.xml` read the models from a released package** (`@import(...)` and `classpath:`):
@@ -88,8 +88,16 @@ mkdir -p target && mvn -q -DskipTests clean compile 2>&1 | tee target/compile.lo
 # focused tests of a task (the implementer runs only these)
 mvn -q test -Dtest='<TestClass>'
 # full suite with integration tests and containers (once per slice review)
-# <after generation: full suite takes about N minutes, needs Docker / Testcontainers / ...>
-mvn -q verify
+# about 4 minutes (222 s, 2026-11-25, committed pom); needs Docker (Testcontainers starts the docker-compose
+# PostgreSQL / Kafka / Schema Registry on fixed ports 5432, 9092, 8081, 2181).
+# Surefire failures stop the build before the integration tests: add -Dmaven.test.failure.ignore=true to see both.
+# known failing at the baseline (2026-11-25), each fixed by a board task (docs/tasks.md tests:):
+#   PaymentRepositoryIntegrationTest.updateTest: asserts Instant.now() -> T-01
+#   PaymentsProcessingApiIntegrationTest.testGetPaymentStatus_400: no datasource (@EnableDockerCompose commented out), valid body -> T-01
+#   PaymentsProcessingApiIntegrationTest.testGetPaymentStatus_201: no datasource -> T-01; expects noPayment and started both set -> T-14
+# With the AsyncAPI templates set to SpringKafka (uncommitted pom change) every Spring context test also fails until the
+# app.kafka.topics.<channel>.topic properties exist (T-07).
+mvn -q verify -Dmaven.test.failure.ignore=true
 # lint the models
 bash .zenwave/bin/lint-zdl.sh --strict ../payments-processing-api/domain-model.zdl
 # export the Hibernate DDL (JPA); -t names a concrete test (without it, the abstract base is picked and nothing is written)
