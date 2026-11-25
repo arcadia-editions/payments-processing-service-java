@@ -25,7 +25,8 @@ properties: until T-07 adds them no Spring context starts, so every repository a
 ## S0 Baseline
 review: [ ]
 
-- [ ] T-01 mechanical AFK Generated tests that should pass do: updateTest without Instant.now(), API ITs with a datasource (@EnableDockerCompose commented in BaseWebTestClientTest), testGetPaymentStatus_400 sends a valid body
+- [x] T-01 mechanical AFK Generated tests that should pass do: updateTest without Instant.now(), API ITs with a datasource (@EnableDockerCompose commented in BaseWebTestClientTest), testGetPaymentStatus_400 sends a valid body
+      done: grok grok-4.7
       test data: data/jpa/Payment/1.json, data.sql (C-01, id 1)
       tests: PaymentsProcessingServiceTest, PaymentsProcessingApiControllerTest, PaymentRepositoryIntegrationTest#updateTest, PaymentsProcessingApiIntegrationTest#testGetPaymentStatus_400
       blocked by: T-07
