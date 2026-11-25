@@ -31,6 +31,8 @@
 		<asyncapi.client.inputSpec>classpath:com/arcadiaeditions/payments/payment-processing/payments-processing/asyncapi-client.yml</asyncapi.client.inputSpec>
 		<!-- generated AsyncAPI SDK lives outside the hexagon: asyncapi.provider (asyncapi.yml) and asyncapi.client (asyncapi-client.yml) -->
 		<asyncApiClientApiPackage>${basePackage}.asyncapi.client</asyncApiClientApiPackage>
+		<!-- AsyncAPI generator templates: SpringCloudStream (zenwave default) or SpringKafka -->
+		<asyncapi.templates>SpringKafka</asyncapi.templates>
 
 		<spring-boot.version>${project.parent.version}</spring-boot.version>
 		<spring-cloud.version>2025.1.4</spring-cloud.version>
@@ -383,6 +385,7 @@
 							<generatorName>AsyncAPIGenerator</generatorName>
 							<configOptions>
 								<role>provider</role>
+								<templates>${asyncapi.templates}</templates>
 								<!-- payloads are avro: <modelPackage> (${asyncApiModelPackage}) is only needed for json-schema payloads -->
 								<producerApiPackage>${asyncApiProducerApiPackage}</producerApiPackage>
 								<consumerApiPackage>${asyncApiConsumerApiPackage}</consumerApiPackage>
@@ -402,6 +405,7 @@
 							<configOptions>
 								<!-- asyncapi-client.yml is written from this service's point of view (action: receive), so it is generated as provider -->
 								<role>provider</role>
+								<templates>${asyncapi.templates}</templates>
 								<producerApiPackage>${asyncApiClientApiPackage}</producerApiPackage>
 								<consumerApiPackage>${asyncApiClientApiPackage}</consumerApiPackage>
 							</configOptions>
