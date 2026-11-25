@@ -1,3 +1,6 @@
+server:
+  port: ${SERVER_PORT:8103}
+
 logging:
   level:
     com.arcadiaeditions.payments.processing: DEBUG
