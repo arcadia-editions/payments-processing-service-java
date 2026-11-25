@@ -33,13 +33,21 @@ public class PaymentsProcessingServiceImpl implements PaymentsProcessingService 
     private final EventsMapper eventsMapper = EventsMapper.INSTANCE;
     private final PaymentsProcessingEventsProducer eventsProducer;
 
+    /** authorizedAt, declinedAt, failedAt, retriedAt, exhaustedAt, capturedAt, voidedAt. */
+    private final Clock clock;
+
     /**
      * Constructor.
      */
     public PaymentsProcessingServiceImpl(
-            PaymentRepository paymentRepository, PaymentsProcessingEventsProducer eventsProducer) {
+            PaymentRepository paymentRepository, PaymentsProcessingEventsProducer eventsProducer, Clock clock) {
         this.paymentRepository = paymentRepository;
         this.eventsProducer = eventsProducer;
+        this.clock = clock;
+    }
+
+    Clock clock() {
+        return clock;
     }
 
     public Payment authorizePayment(AuthorizePaymentInput input) {

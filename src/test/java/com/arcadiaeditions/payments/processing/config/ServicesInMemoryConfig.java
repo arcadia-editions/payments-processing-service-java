@@ -19,7 +19,7 @@ public class ServicesInMemoryConfig extends RepositoriesInMemoryConfig {
     protected final EventsProducerInMemoryContext eventsProducerInMemoryContext = new EventsProducerInMemoryContext();
 
     protected final PaymentsProcessingServiceImpl paymentsProcessingService = new PaymentsProcessingServiceImpl(
-            paymentRepository(), eventsProducerInMemoryContext.paymentsProcessingEventsProducer());
+            paymentRepository(), eventsProducerInMemoryContext.paymentsProcessingEventsProducer(), TestClock.FIXED);
 
     @Bean
     public <T extends PaymentsProcessingService> T paymentsProcessingService() {
