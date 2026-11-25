@@ -3,6 +3,7 @@ package com.arcadiaeditions.payments.processing.config;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import jakarta.persistence.Table;
 import java.io.File;
 import java.nio.file.Files;
 import java.util.List;
@@ -29,7 +30,9 @@ public class TestDataLoader {
     }
 
     public List<String> loadCollectionTestDataAsJson(Class collectionClass) {
-        return readDirectoryFilesAsString("src/test/resources/data/jpa/" + collectionClass.getSimpleName());
+        var annotation = (Table) collectionClass.getAnnotation(Table.class);
+        var table = annotation.name();
+        return readDirectoryFilesAsString("src/test/resources/data/jpa/" + table);
     }
 
     protected List<String> listFolders(String directory) {

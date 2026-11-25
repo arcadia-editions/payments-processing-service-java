@@ -81,6 +81,9 @@ public class Payment implements Serializable {
     @Column(name = "voided_at")
     private Instant voidedAt;
 
+    @Column(name = "void_failed_at")
+    private Instant voidFailedAt;
+
     @Column(name = "failure_reason")
     private String failureReason;
 
@@ -225,6 +228,15 @@ public class Payment implements Serializable {
 
     public Payment setVoidedAt(Instant voidedAt) {
         this.voidedAt = voidedAt;
+        return this;
+    }
+
+    public Instant getVoidFailedAt() {
+        return voidFailedAt;
+    }
+
+    public Payment setVoidFailedAt(Instant voidFailedAt) {
+        this.voidFailedAt = voidFailedAt;
         return this;
     }
 

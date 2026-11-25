@@ -11,6 +11,4 @@ import org.springframework.transaction.annotation.EnableTransactionManagement;
 @EntityScan("com.arcadiaeditions.payments.processing")
 @EnableJpaAuditing(auditorAwareRef = "springSecurityAuditorAware")
 @EnableTransactionManagement
-public class DatabaseConfiguration {
-
-}
+public class DatabaseConfiguration {}

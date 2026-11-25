@@ -24,5 +24,7 @@ public interface EventsMapper {
 
     com.arcadiaeditions.payments.processing.events.avro.PaymentVoided asPaymentVoided(Payment payment);
 
+    com.arcadiaeditions.payments.processing.events.avro.PaymentVoidFailed asPaymentVoidFailed(Payment payment);
+
     com.arcadiaeditions.payments.processing.events.avro.PaymentFailed asPaymentFailed(Payment payment);
 }

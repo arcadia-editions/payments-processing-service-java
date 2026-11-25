@@ -48,6 +48,7 @@ class PaymentRepositoryIntegrationTest extends BaseRepositoryIntegrationTest {
         payment.setFailedAt(Instant.now());
         payment.setCapturedAt(Instant.now());
         payment.setVoidedAt(Instant.now());
+        payment.setVoidFailedAt(Instant.now());
         payment.setFailureReason("");
 
         // Persist aggregate root
@@ -78,6 +79,7 @@ class PaymentRepositoryIntegrationTest extends BaseRepositoryIntegrationTest {
         payment.setFailedAt(Instant.now());
         payment.setCapturedAt(Instant.now());
         payment.setVoidedAt(Instant.now());
+        payment.setVoidFailedAt(Instant.now());
         payment.setFailureReason("");
 
         payment = paymentRepository.save(payment);
@@ -95,6 +97,7 @@ class PaymentRepositoryIntegrationTest extends BaseRepositoryIntegrationTest {
         Assertions.assertEquals(Instant.now(), payment.getFailedAt());
         Assertions.assertEquals(Instant.now(), payment.getCapturedAt());
         Assertions.assertEquals(Instant.now(), payment.getVoidedAt());
+        Assertions.assertEquals(Instant.now(), payment.getVoidFailedAt());
         Assertions.assertEquals("", payment.getFailureReason());
     }
 

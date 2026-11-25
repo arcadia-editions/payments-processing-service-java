@@ -46,8 +46,18 @@ public class PaymentsProcessingServiceImpl implements PaymentsProcessingService 
 
         log.debug("Request authorizePayment: {}", input);
 
-        var payment = paymentsProcessingServiceMapper.update(new Payment(), input);
-        // TODO: implement this method
+        // TODO CUSTOM_REQUIRED: load the Payment this transition applies to, e.g. by a correlation key in the input
+        Optional<Payment> foundPayment = Optional.empty();
+        var payment = foundPayment
+                .map(existingPayment -> {
+                    PaymentTransitions.ensureCanAuthorizePayment(existingPayment);
+                    paymentsProcessingServiceMapper.update(existingPayment, input);
+                    // TODO CUSTOM_REQUIRED: call existingPayment.setStatus(...) with one of AUTHORIZED, DECLINED,
+                    // FAILED
+                    return existingPayment;
+                })
+                .map(paymentRepository::save)
+                .orElseThrow();
         // emit events
         var paymentAuthorized = eventsMapper.asPaymentAuthorized(payment);
         eventsProducer.onPaymentAuthorized(paymentAuthorized);
@@ -58,7 +68,34 @@ public class PaymentsProcessingServiceImpl implements PaymentsProcessingService 
         return payment;
     }
 
-    public Payment retryPayment(RetryPaymentInput input) {
+    public Optional<Payment> reauthorizePayment(ReauthorizePaymentInput input) {
+
+        log.debug("Request reauthorizePayment: {}", input);
+
+        // TODO CUSTOM_REQUIRED: load the Payment this transition applies to, e.g. by a correlation key in the input
+        Optional<Payment> foundPayment = Optional.empty();
+        var payment = foundPayment
+                .map(existingPayment -> {
+                    PaymentTransitions.ensureCanReauthorizePayment(existingPayment);
+                    paymentsProcessingServiceMapper.update(existingPayment, input);
+                    // TODO CUSTOM_REQUIRED: call existingPayment.setStatus(...) with one of AUTHORIZED, DECLINED,
+                    // FAILED
+                    return existingPayment;
+                })
+                .map(paymentRepository::save);
+        if (payment.isPresent()) {
+            // emit events
+            var paymentAuthorized = eventsMapper.asPaymentAuthorized(payment.get());
+            eventsProducer.onPaymentAuthorized(paymentAuthorized);
+            var paymentDeclined = eventsMapper.asPaymentDeclined(payment.get());
+            eventsProducer.onPaymentDeclined(paymentDeclined);
+            var paymentFailed = eventsMapper.asPaymentFailed(payment.get());
+            eventsProducer.onPaymentFailed(paymentFailed);
+        }
+        return payment;
+    }
+
+    public Optional<Payment> retryPayment(RetryPaymentInput input) {
 
         log.debug("Request retryPayment: {}", input);
 
@@ -71,13 +108,14 @@ public class PaymentsProcessingServiceImpl implements PaymentsProcessingService 
                     // TODO CUSTOM_REQUIRED: call existingPayment.setStatus(...) with one of FAILED, RETRY_EXHAUSTED
                     return existingPayment;
                 })
-                .map(paymentRepository::save)
-                .orElseThrow();
-        // emit events
-        var paymentRetried = eventsMapper.asPaymentRetried(payment);
-        eventsProducer.onPaymentRetried(paymentRetried);
-        var paymentRetryExhausted = eventsMapper.asPaymentRetryExhausted(payment);
-        eventsProducer.onPaymentRetryExhausted(paymentRetryExhausted);
+                .map(paymentRepository::save);
+        if (payment.isPresent()) {
+            // emit events
+            var paymentRetried = eventsMapper.asPaymentRetried(payment.get());
+            eventsProducer.onPaymentRetried(paymentRetried);
+            var paymentRetryExhausted = eventsMapper.asPaymentRetryExhausted(payment.get());
+            eventsProducer.onPaymentRetryExhausted(paymentRetryExhausted);
+        }
         return payment;
     }
 
@@ -91,7 +129,7 @@ public class PaymentsProcessingServiceImpl implements PaymentsProcessingService 
                 .map(existingPayment -> {
                     PaymentTransitions.ensureCanCapturePayment(existingPayment);
                     paymentsProcessingServiceMapper.update(existingPayment, input);
-                    existingPayment.setStatus(PaymentStatus.CAPTURED);
+                    // TODO CUSTOM_REQUIRED: call existingPayment.setStatus(...) with one of CAPTURED, CAPTURE_FAILED
                     return existingPayment;
                 })
                 .map(paymentRepository::save)
@@ -104,7 +142,7 @@ public class PaymentsProcessingServiceImpl implements PaymentsProcessingService 
         return payment;
     }
 
-    public Payment voidPayment(VoidPaymentInput input) {
+    public Optional<Payment> voidPayment(VoidPaymentInput input) {
 
         log.debug("Request voidPayment: {}", input);
 
@@ -114,14 +152,26 @@ public class PaymentsProcessingServiceImpl implements PaymentsProcessingService 
                 .map(existingPayment -> {
                     PaymentTransitions.ensureCanVoidPayment(existingPayment);
                     paymentsProcessingServiceMapper.update(existingPayment, input);
-                    existingPayment.setStatus(PaymentStatus.VOIDED);
+                    // TODO CUSTOM_REQUIRED: call existingPayment.setStatus(...) with one of VOIDED, VOID_FAILED
                     return existingPayment;
                 })
-                .map(paymentRepository::save)
-                .orElseThrow();
-        // emit events
-        var paymentVoided = eventsMapper.asPaymentVoided(payment);
-        eventsProducer.onPaymentVoided(paymentVoided);
+                .map(paymentRepository::save);
+        if (payment.isPresent()) {
+            // emit events
+            var paymentVoided = eventsMapper.asPaymentVoided(payment.get());
+            eventsProducer.onPaymentVoided(paymentVoided);
+            var paymentVoidFailed = eventsMapper.asPaymentVoidFailed(payment.get());
+            eventsProducer.onPaymentVoidFailed(paymentVoidFailed);
+        }
         return payment;
+    }
+
+    public GetPaymentStatusResult getPaymentStatus(GetPaymentStatusInput input) {
+
+        log.debug("Request getPaymentStatus: {}", input);
+
+        var payment = paymentsProcessingServiceMapper.update(new Payment(), input);
+        // TODO: implement this method
+        return paymentsProcessingServiceMapper.asGetPaymentStatusResult(payment);
     }
 }

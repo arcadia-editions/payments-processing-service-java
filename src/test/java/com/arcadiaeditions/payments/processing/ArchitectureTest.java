@@ -1,15 +1,15 @@
 // formatter:off
 package com.arcadiaeditions.payments.processing;
 
-import com.tngtech.archunit.core.importer.ImportOption.DoNotIncludeTests;
-import com.tngtech.archunit.junit.AnalyzeClasses;
-import com.tngtech.archunit.junit.ArchTest;
-import com.tngtech.archunit.lang.ArchRule;
-
 import static com.tngtech.archunit.base.DescribedPredicate.alwaysTrue;
 import static com.tngtech.archunit.core.domain.JavaClass.Predicates.resideInAPackage;
 import static com.tngtech.archunit.library.Architectures.layeredArchitecture;
 import static com.tngtech.archunit.library.Architectures.onionArchitecture;
+
+import com.tngtech.archunit.core.importer.ImportOption.DoNotIncludeTests;
+import com.tngtech.archunit.junit.AnalyzeClasses;
+import com.tngtech.archunit.junit.ArchTest;
+import com.tngtech.archunit.lang.ArchRule;
 
 @AnalyzeClasses(packages = "com.arcadiaeditions.payments.processing", importOptions = DoNotIncludeTests.class)
 class ArchitectureTest {
@@ -27,36 +27,58 @@ class ArchitectureTest {
      */
     @ArchTest
     static final ArchRule respectsLayersForHexagonalArchitecture = layeredArchitecture()
-        .consideringOnlyDependenciesInAnyPackage("com.arcadiaeditions.payments.processing..")
-        .layer("Any").definedBy("..")
-        .optionalLayer("Config").definedBy("..config..")
-        .layer("Core").definedBy("..core..")
-        .layer("Domain").definedBy("..core.domain..")
-        .optionalLayer("Models").definedBy("..core.domain..", "..core.inbound.dtos..")
-        .optionalLayer("SearchModel").definedBy("..core.domain.search..")
-        .optionalLayer("InfrastructureSearch").definedBy("..core.outbound.search..")
-        .layer("CoreApplication").definedBy("..core.application..")
-        .layer("CoreInbound").definedBy("..core.inbound")
-        .layer("CoreOutbound").definedBy("..core.outbound..")
-        .optionalLayer("Infrastructure").definedBy("..infrastructure..")
-        .optionalLayer("Adapters").definedBy("..adapters..")
-        .optionalLayer("Utils").definedBy("..utils..")
-
-        .whereLayer("Utils").mayOnlyBeAccessedByLayers("Any")
-        .whereLayer("Config").mayNotBeAccessedByAnyLayer()
-        .whereLayer("CoreApplication").mayNotBeAccessedByAnyLayer()
-        .whereLayer("CoreApplication").mayOnlyAccessLayers("Utils", "Core", "CoreInbound", "CoreOutbound", "Domain")
-        .whereLayer("Infrastructure").mayOnlyBeAccessedByLayers("Config", "Core")
-        .whereLayer("Infrastructure").mayOnlyAccessLayers("CoreOutbound", "Models", "Utils")
-        .whereLayer("CoreInbound").mayOnlyAccessLayers("Models")
-        .whereLayer("CoreInbound").mayOnlyBeAccessedByLayers("CoreApplication", "Adapters")
-        .whereLayer("CoreOutbound").mayOnlyAccessLayers("Models")
-        .whereLayer("CoreOutbound").mayOnlyBeAccessedByLayers("CoreApplication", "Infrastructure", "InfrastructureSearch")
-        .whereLayer("Domain").mayOnlyAccessLayers("Domain")
-        .whereLayer("SearchModel").mayOnlyAccessLayers("Domain")
-
-        .ignoreDependency(resideInAPackage("..config.."), alwaysTrue())
-        ;
+            .consideringOnlyDependenciesInAnyPackage("com.arcadiaeditions.payments.processing..")
+            .layer("Any")
+            .definedBy("..")
+            .optionalLayer("Config")
+            .definedBy("..config..")
+            .layer("Core")
+            .definedBy("..core..")
+            .layer("Domain")
+            .definedBy("..core.domain..")
+            .optionalLayer("Models")
+            .definedBy("..core.domain..", "..core.inbound.dtos..")
+            .optionalLayer("SearchModel")
+            .definedBy("..core.domain.search..")
+            .optionalLayer("InfrastructureSearch")
+            .definedBy("..core.outbound.search..")
+            .layer("CoreApplication")
+            .definedBy("..core.application..")
+            .layer("CoreInbound")
+            .definedBy("..core.inbound")
+            .layer("CoreOutbound")
+            .definedBy("..core.outbound..")
+            .optionalLayer("Infrastructure")
+            .definedBy("..infrastructure..")
+            .optionalLayer("Adapters")
+            .definedBy("..adapters..")
+            .optionalLayer("Utils")
+            .definedBy("..utils..")
+            .whereLayer("Utils")
+            .mayOnlyBeAccessedByLayers("Any")
+            .whereLayer("Config")
+            .mayNotBeAccessedByAnyLayer()
+            .whereLayer("CoreApplication")
+            .mayNotBeAccessedByAnyLayer()
+            .whereLayer("CoreApplication")
+            .mayOnlyAccessLayers("Utils", "Core", "CoreInbound", "CoreOutbound", "Domain")
+            .whereLayer("Infrastructure")
+            .mayOnlyBeAccessedByLayers("Config", "Core")
+            .whereLayer("Infrastructure")
+            .mayOnlyAccessLayers("CoreOutbound", "Models", "Utils")
+            .whereLayer("CoreInbound")
+            .mayOnlyAccessLayers("Models")
+            .whereLayer("CoreInbound")
+            .mayOnlyBeAccessedByLayers("CoreApplication", "Adapters")
+            .whereLayer("CoreOutbound")
+            .mayOnlyAccessLayers("Models")
+            .whereLayer("CoreOutbound")
+            .mayOnlyBeAccessedByLayers("CoreApplication", "Infrastructure", "InfrastructureSearch")
+            .whereLayer("Domain")
+            .mayOnlyAccessLayers("Domain")
+            .whereLayer("SearchModel")
+            .mayOnlyAccessLayers("Domain")
+            .ignoreDependency(resideInAPackage("..config.."), alwaysTrue());
 
     /**
      * Validates that dependencies go from the outer layers to the inner layers, and not the other way around.
@@ -65,13 +87,11 @@ class ArchitectureTest {
      */
     @ArchTest
     static final ArchRule respectsOnionArchitecture = onionArchitecture()
-        .withOptionalLayers(true)
-        .domainModels("..core.domain..")
-        .domainServices("..core.inbound..", "..core.outbound..")
-        .applicationServices("..core.application..")
-        .adapter("inbound", "..adapters.(*)..")
-        .adapter("outbound", "..infrastructure.(*)..")
-
-        .ignoreDependency(resideInAPackage("..config.."), alwaysTrue())
-        ;
+            .withOptionalLayers(true)
+            .domainModels("..core.domain..")
+            .domainServices("..core.inbound..", "..core.outbound..")
+            .applicationServices("..core.application..")
+            .adapter("inbound", "..adapters.(*)..")
+            .adapter("outbound", "..infrastructure.(*)..")
+            .ignoreDependency(resideInAPackage("..config.."), alwaysTrue());
 }

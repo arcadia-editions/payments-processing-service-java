@@ -1,6 +1,5 @@
 package com.arcadiaeditions.payments.processing.core.domain;
 
-
 /**
  * Enum for PaymentStatus.
  */
@@ -13,5 +12,6 @@ public enum PaymentStatus {
     CAPTURED,
     CAPTURE_FAILED,
     VOIDED,
+    VOID_FAILED,
     ;
 }

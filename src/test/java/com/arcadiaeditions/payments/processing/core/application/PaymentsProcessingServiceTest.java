@@ -37,6 +37,10 @@ class PaymentsProcessingServiceTest {
     }
 
     @Test
+    void reauthorizePaymentTest() { // TODO: implement this test
+    }
+
+    @Test
     void retryPaymentTest() { // TODO: implement this test
     }
 
@@ -46,5 +50,9 @@ class PaymentsProcessingServiceTest {
 
     @Test
     void voidPaymentTest() { // TODO: implement this test
+    }
+
+    @Test
+    void getPaymentStatusTest() { // TODO: implement this test
     }
 }

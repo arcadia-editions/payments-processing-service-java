@@ -18,11 +18,21 @@ public interface PaymentsProcessingServiceMapper {
 
     @Mapping(target = "id", ignore = true)
     Payment update(@MappingTarget Payment entity, AuthorizePaymentInput input);
+    // ReauthorizePaymentInputnull-Payment reauthorizePayment
+    Payment asPayment(ReauthorizePaymentInput input);
+
+    @Mapping(target = "id", ignore = true)
+    Payment update(@MappingTarget Payment entity, ReauthorizePaymentInput input);
     // VoidPaymentInputnull-Payment voidPayment
     Payment asPayment(VoidPaymentInput input);
 
     @Mapping(target = "id", ignore = true)
     Payment update(@MappingTarget Payment entity, VoidPaymentInput input);
+    // GetPaymentStatusInputnull-Payment getPaymentStatus
+    Payment asPayment(GetPaymentStatusInput input);
+
+    @Mapping(target = "id", ignore = true)
+    Payment update(@MappingTarget Payment entity, GetPaymentStatusInput input);
     // RetryPaymentInputnull-Payment retryPayment
     Payment asPayment(RetryPaymentInput input);
 
@@ -34,4 +44,6 @@ public interface PaymentsProcessingServiceMapper {
     @Mapping(target = "id", ignore = true)
     Payment update(@MappingTarget Payment entity, CapturePaymentInput input);
     // output mappings
+    // Payment-GetPaymentStatusResult getPaymentStatus
+    GetPaymentStatusResult asGetPaymentStatusResult(Payment entity);
 }
