@@ -1,6 +1,6 @@
 package com.arcadiaeditions.payments.processing.adapters.web;
 
-// import com.arcadiaeditions.payments.processing.config.DockerComposeInitializer;
+import com.arcadiaeditions.payments.processing.config.DockerComposeInitializer;
 import org.junit.jupiter.api.BeforeEach;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -11,7 +11,7 @@ import org.springframework.web.context.WebApplicationContext;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.MOCK)
 @ActiveProfiles("test")
-// @DockerComposeInitializer.EnableDockerCompose
+@DockerComposeInitializer.EnableDockerCompose
 @org.springframework.transaction.annotation.Transactional
 public abstract class BaseWebTestClientTest {
 
@@ -22,7 +22,12 @@ public abstract class BaseWebTestClientTest {
 
     @BeforeEach
     public void setup() {
-        this.webTestClient =
-                MockMvcWebTestClient.bindToApplicationContext(this.context).build();
+        // application.yml spring.security.user. Security runs before bean validation, so an
+        // unauthenticated call is 401 and the 400 case never runs.
+        this.webTestClient = MockMvcWebTestClient.bindToApplicationContext(this.context)
+                .build()
+                .mutate()
+                .defaultHeaders(headers -> headers.setBasicAuth("admin", "password"))
+                .build();
     }
 }

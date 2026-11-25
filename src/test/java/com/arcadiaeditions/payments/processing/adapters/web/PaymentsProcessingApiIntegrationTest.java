@@ -53,9 +53,10 @@ public class PaymentsProcessingApiIntegrationTest extends BaseWebTestClientTest 
      */
     @Test
     public void testGetPaymentStatus_400() {
+        // orderId is required (@NotNull on GetPaymentStatusInputDTO). A null value is an invalid request.
         String requestBody = """
             {
-              "orderId" : "orderId-w9m"
+              "orderId" : null
             }
         """;
 
