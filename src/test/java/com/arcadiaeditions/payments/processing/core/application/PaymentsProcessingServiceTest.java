@@ -1,5 +1,6 @@
 package com.arcadiaeditions.payments.processing.core.application;
 
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 import com.arcadiaeditions.payments.processing.config.*;
@@ -54,5 +55,19 @@ class PaymentsProcessingServiceTest {
 
     @Test
     void getPaymentStatusTest() { // TODO: implement this test
+    }
+
+    @Test
+    void clockIsFixedAtTestNow() {
+        assertSame(TestClock.FIXED, paymentsProcessingService.clock());
+        assertEquals(TestClock.NOW, paymentsProcessingService.clock().instant());
+        assertEquals(TestClock.FIXED, new TestClockConfiguration().clock());
+    }
+
+    @Test
+    void mainClockIsSystemUtc() {
+        var clock = new ClockConfiguration().clock();
+        assertEquals(ZoneOffset.UTC, clock.getZone());
+        assertNotEquals(TestClock.NOW, clock.instant());
     }
 }
