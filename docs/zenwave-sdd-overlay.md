@@ -95,8 +95,8 @@ mvn -q test -Dtest='<TestClass>'
 #   PaymentRepositoryIntegrationTest.updateTest: asserts Instant.now() -> T-01
 #   PaymentsProcessingApiIntegrationTest.testGetPaymentStatus_400: no datasource (@EnableDockerCompose commented out), valid body -> T-01
 #   PaymentsProcessingApiIntegrationTest.testGetPaymentStatus_201: no datasource -> T-01; expects noPayment and started both set -> T-14
-# With the AsyncAPI templates set to SpringKafka (uncommitted pom change) every Spring context test also fails until the
-# app.kafka.topics.<channel>.topic properties exist (T-07).
+# pom.xml uses the SpringKafka templates (8adfd42): every Spring context test (PaymentRepositoryIntegrationTest, all of
+# PaymentsProcessingApiIntegrationTest) also fails at context load until the app.kafka.topics.<channel>.topic properties exist (T-07).
 mvn -q verify -Dmaven.test.failure.ignore=true
 # lint the models
 bash .zenwave/bin/lint-zdl.sh --strict ../payments-processing-api/domain-model.zdl

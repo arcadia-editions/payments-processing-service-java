@@ -18,9 +18,8 @@ arcadia-editions-architecture tag baseline/place-order-flow-<n>.
 Open proposal: P-01 (asyncapi-client.yml 0.2.0 has no FulfillmentFailed / OrderConfirmationRejected channel) blocks
 T-27..T-30.
 Baseline failures confirmed by mvn verify 2026-11-25 (overlay, full-suite command). Data.sql matches the exported DDL.
-AsyncAPI templates: the committed pom uses the zenwave default (SpringCloudStream); an uncommitted pom change switches
-to SpringKafka, whose consumers need app.kafka.topics.<channel>.topic properties (without them no Spring context
-starts). T-07 follows whatever pom.xml holds when it starts.
+AsyncAPI templates: pom.xml uses SpringKafka (8adfd42), whose consumers need app.kafka.topics.<channel>.topic
+properties: until T-07 adds them no Spring context starts, so every repository and API IT fails at context load.
 -->
 
 ## S0 Baseline
@@ -29,6 +28,7 @@ review: [ ]
 - [ ] T-01 mechanical AFK Generated tests that should pass do: updateTest without Instant.now(), API ITs with a datasource (@EnableDockerCompose commented in BaseWebTestClientTest), testGetPaymentStatus_400 sends a valid body
       test data: data/jpa/Payment/1.json, data.sql (C-01, id 1)
       tests: PaymentsProcessingServiceTest, PaymentsProcessingApiControllerTest, PaymentRepositoryIntegrationTest#updateTest, PaymentsProcessingApiIntegrationTest#testGetPaymentStatus_400
+      blocked by: T-07
 - [x] T-02 bounded HITL ArchitectureTest fails: core.application uses the generated producers in asyncapi.provider (outside the hexagon, as zenwave-scripts.zw sets it). Decide: allow the dependency in the rule, or put an outbound port in core.outbound; record it as an ADR. Decided 2026-11-25 by the person: allow it in the rule (EventProducerSDK layer), docs/adr/0001-core-application-uses-generated-event-producers.md
       tests: ArchitectureTest
 - [ ] T-03 mechanical AFK Inject a java.time.Clock (system clock in main, fixed 2026-10-14T10:00:00Z in tests) for every timestamp the service sets and every event time (authorizedAt, declinedAt, failedAt, retriedAt, exhaustedAt, capturedAt, voidedAt)
@@ -38,7 +38,7 @@ review: [ ]
       model: ../payments-processing-api/domain-model.zdl:56-57, ../payments-processing-api/domain-model.zdl:135-144
       test data: data.sql (C-01, C-11 none)
       tests: PaymentRepositoryIntegrationTest
-- [ ] T-05 bounded HITL Decide the payment processor integration: provider or a stand-in (the modulith uses one, driven by paymentMethodId triggers), how authorize / capture / void answer, providerReference format, failureReason codes, and which Payment field keeps VoidPaymentInput.reason; record it as an ADR. The ZDL names the processor but no API (fixtures assume A-02, A-03)
+- [x] T-05 bounded HITL Decide the payment processor integration: provider or a stand-in (the modulith uses one, driven by paymentMethodId triggers), how authorize / capture / void answer, providerReference format, failureReason codes, and which Payment field keeps VoidPaymentInput.reason; record it as an ADR. The ZDL names the processor but no API (fixtures assume A-02, A-03). Decided 2026-11-25 for the demo: the modulith's stand-in, docs/adr/0002-stand-in-payment-processor.md
       model: ../payments-processing-api/domain-model.zdl:149-163, ../payments-processing-api/domain-model.zdl:64-73, ../payments-processing-api/domain-model.zdl:141-144
       test data: data.sql (C-02, C-03, C-12, C-21)
 - [ ] T-06 advanced AFK Outbound port PaymentProcessor (authorize, capture, void) in core.outbound with the adapter T-05 chose and an in-memory stub for tests that answers each outcome by paymentMethodId or orderId, including a call that exceeds the 30-second timeout
@@ -46,12 +46,11 @@ review: [ ]
       test data: stub-driven (no row): the stub decides AUTHORIZED / DECLINED / FAILED, CAPTURED / CAPTURE_FAILED, VOIDED / VOID_FAILED
       tests: PaymentProcessorStubTest
       blocked by: T-05
-- [ ] T-07 mechanical AFK Kafka bindings in application.yml for the produced channels (payment-authorized, -declined, -failed, -retried, -retry-exhausted, -captured, -capture-failed, -voided, -void-failed) and the consumed order-created-event-v1, fulfillment-scheduled-event-v1 and the own payment-failed, payment-retried, payment-capture-failed channels, replacing the archetype's on-customer-event
+- [ ] T-07 mechanical AFK Kafka topics in application.yml (SpringKafka templates: app.kafka.topics.<channel>.topic, topic names from asyncapi.yml / asyncapi-client.yml) for the produced channels (payment-authorized, -declined, -failed, -retried, -retry-exhausted, -captured, -capture-failed, -voided, -void-failed) and the consumed order-created-event-v1, fulfillment-scheduled-event-v1 and the own payment-failed, payment-retried, payment-capture-failed channels, replacing the archetype's on-customer-event
       model: ../payments-processing-api/domain-model.zdl:155, ../payments-processing-api/domain-model.zdl:165, ../payments-processing-api/domain-model.zdl:176, ../payments-processing-api/domain-model.zdl:181, ../payments-processing-api/domain-model.zdl:192, ../payments-processing-api/domain-model.zdl:201-283
       test data: data.sql (C-02 for a produced event, C-12 for a consumed one)
-      tests: PaymentsProcessingApiIntegrationTest
-      blocked by: T-01
-- [ ] T-08 bounded HITL Decide what capturePayment does when there is no Payment for the orderId, or it is in a state the ZDL lists neither as from: nor as redelivery no-op (AUTHORIZATION_REQUESTED, DECLINED, FAILED, RETRY_EXHAUSTED, VOID_FAILED): no-op, error to the DLQ, or else; the generated code throws
+      tests: PaymentsProcessingApiIntegrationTest, PaymentRepositoryIntegrationTest
+- [x] T-08 bounded HITL Decide what capturePayment does when there is no Payment for the orderId, or it is in a state the ZDL lists neither as from: nor as redelivery no-op (AUTHORIZATION_REQUESTED, DECLINED, FAILED, RETRY_EXHAUSTED, VOID_FAILED): no-op, error to the DLQ, or else; the generated code throws. Decided 2026-11-25 for the demo: it throws (as generated), no special handling
       model: ../payments-processing-api/domain-model.zdl:180-183
       test data: data.sql (C-15, C-03, C-11 none)
 
