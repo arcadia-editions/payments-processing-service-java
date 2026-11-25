@@ -1,0 +1,20 @@
+{
+    "id": 551,
+    "version": 0,
+    "orderId": "ORD-015",
+    "customerId": "CUST-015",
+    "paymentMethodId": "PM-015",
+    "customerEmail": "customer015@example.com",
+    "amount": 29.99,
+    "currency": "EUR",
+    "status": "AUTHORIZATION_REQUESTED",
+    "providerReference": null,
+    "attemptCount": 1,
+    "authorizedAt": null,
+    "declinedAt": null,
+    "failedAt": null,
+    "capturedAt": null,
+    "voidedAt": null,
+    "voidFailedAt": null,
+    "failureReason": null
+}

@@ -1,0 +1,20 @@
+{
+    "id": 351,
+    "version": 0,
+    "orderId": "ORD-008",
+    "customerId": "CUST-008",
+    "paymentMethodId": "PM-008",
+    "customerEmail": "customer008@example.com",
+    "amount": 29.99,
+    "currency": "EUR",
+    "status": "RETRY_EXHAUSTED",
+    "providerReference": null,
+    "attemptCount": 3,
+    "authorizedAt": null,
+    "declinedAt": null,
+    "failedAt": "2026-10-14T09:51:26Z",
+    "capturedAt": null,
+    "voidedAt": null,
+    "voidFailedAt": null,
+    "failureReason": "processor_unavailable"
+}

@@ -1,0 +1,20 @@
+{
+    "id": 51,
+    "version": 0,
+    "orderId": "ORD-002",
+    "customerId": "CUST-002",
+    "paymentMethodId": "PM-002",
+    "customerEmail": "customer002@example.com",
+    "amount": 99.97,
+    "currency": "EUR",
+    "status": "AUTHORIZED",
+    "providerReference": "STANDIN-ORD-002",
+    "attemptCount": 1,
+    "authorizedAt": "2026-10-14T09:50:32Z",
+    "declinedAt": null,
+    "failedAt": null,
+    "capturedAt": null,
+    "voidedAt": null,
+    "voidFailedAt": null,
+    "failureReason": null
+}
