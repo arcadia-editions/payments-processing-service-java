@@ -4,7 +4,7 @@
     "orderId": "ORD-001",
     "customerId": "CUST-001",
     "paymentMethodId": "PM-001",
-    "customerEmail": "customer@example.com",
+    "customerEmail": "customerexample.com",
     "amount": 49.99,
     "currency": "EUR",
     "status": "CAPTURED",

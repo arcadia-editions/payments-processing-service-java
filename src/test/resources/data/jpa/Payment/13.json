@@ -4,17 +4,17 @@
     "orderId": "ORD-016",
     "customerId": "CUST-016",
     "paymentMethodId": "PM-016",
-    "customerEmail": "customer016@example.com",
+    "customerEmail": "customer016example.com",
     "amount": 29.99,
     "currency": "EUR",
-    "status": "CAPTURE_FAILED",
-    "providerReference": "STANDIN-ORD-016",
+    "status": "FAILED",
+    "providerReference": null,
     "attemptCount": 1,
-    "authorizedAt": "2026-10-14T09:54:46Z",
+    "authorizedAt": null,
     "declinedAt": null,
-    "failedAt": null,
+    "failedAt": "2026-10-14T09:59:50Z",
     "capturedAt": null,
     "voidedAt": null,
     "voidFailedAt": null,
-    "failureReason": "capture_rejected"
+    "failureReason": "processor_unavailable"
 }

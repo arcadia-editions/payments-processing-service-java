@@ -4,7 +4,7 @@
     "orderId": "ORD-007",
     "customerId": "CUST-007",
     "paymentMethodId": "PM-007",
-    "customerEmail": "customer007@example.com",
+    "customerEmail": "customer007example.com",
     "amount": 29.99,
     "currency": "EUR",
     "status": "DECLINED",

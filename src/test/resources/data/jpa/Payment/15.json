@@ -4,17 +4,17 @@
     "orderId": "ORD-018",
     "customerId": "CUST-018",
     "paymentMethodId": "PM-018",
-    "customerEmail": "customer018@example.com",
+    "customerEmail": "customer018example.com",
     "amount": 29.99,
     "currency": "EUR",
-    "status": "AUTHORIZATION_REQUESTED",
+    "status": "FAILED",
     "providerReference": null,
-    "attemptCount": 1,
+    "attemptCount": 3,
     "authorizedAt": null,
     "declinedAt": null,
-    "failedAt": null,
+    "failedAt": "2026-10-14T09:59:52Z",
     "capturedAt": null,
     "voidedAt": null,
     "voidFailedAt": null,
-    "failureReason": null
+    "failureReason": "processor_timeout"
 }
