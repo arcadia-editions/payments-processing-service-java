@@ -10,7 +10,7 @@ inventory, fulfillment, notifications) are boards of their own repositories; her
 and the HTTP read getPaymentStatus that catalog-inventory's reservation timer calls.
 Model paths: ZFL = ../arcadia-editions-architecture/business-flows/place-order-flow.zfl,
 ZDL = ../payments-processing-api/domain-model.zdl.
-Test data chains C-01..C-19: header of src/test/resources/data.sql (assumptions A-01..A-09 there). Data.sql derived
+Test data chains C-01..C-21: header of src/test/resources/data.sql (assumptions A-01..A-09 there). Data.sql derived
 from the entities and the modulith data.sql, not exported: validated in step 7.
 Approved models: payments-processing-api service-all 0.2.0 (tag release/service-all/v0.2.0); ZFL at
 arcadia-editions-architecture tag baseline/place-order-flow-<n>.
@@ -24,7 +24,7 @@ to SpringKafka. T-07 follows whatever pom.xml holds when it starts.
 ## S0 Baseline
 review: [ ]
 
-- [ ] T-01 mechanical AFK Generated tests that should pass do: TestDataLoader reads data/jpa/<Entity simple name> (it reads the table name "payment"; loads on case-insensitive Windows, NPE on Linux; to confirm in step 7), updateTest without Instant.now(), API ITs with a datasource (@EnableDockerCompose commented in BaseWebTestClientTest), testGetPaymentStatus_400 sends a valid body
+- [ ] T-01 mechanical AFK Generated tests that should pass do: updateTest without Instant.now(), API ITs with a datasource (EnableDockerCompose commented in BaseWebTestClientTest), testGetPaymentStatus_400 sends a valid body
       test data: data/jpa/Payment/1.json, data.sql (C-01, id 1)
       tests: PaymentsProcessingServiceTest, PaymentsProcessingApiControllerTest, PaymentRepositoryIntegrationTest#updateTest, PaymentsProcessingApiIntegrationTest#testGetPaymentStatus_400
 - [ ] T-02 bounded HITL ArchitectureTest fails (to confirm in step 7): core.application uses the generated producers in asyncapi.provider (outside the hexagon, as zenwave-scripts.zw sets it). Decide: allow the dependency in the rule, or put an outbound port in core.outbound; record it as an ADR
@@ -38,7 +38,7 @@ review: [ ]
       tests: PaymentRepositoryIntegrationTest
 - [ ] T-05 bounded HITL Decide the payment processor integration: provider or a stand-in (the modulith uses one, driven by paymentMethodId triggers), how authorize / capture / void answer, providerReference format, failureReason codes, and which Payment field keeps VoidPaymentInput.reason; record it as an ADR. The ZDL names the processor but no API (fixtures assume A-02, A-03)
       model: ../payments-processing-api/domain-model.zdl:149-163, ../payments-processing-api/domain-model.zdl:64-73, ../payments-processing-api/domain-model.zdl:141-144
-      test data: data.sql (C-02, C-03, C-12, C-19)
+      test data: data.sql (C-02, C-03, C-12, C-16)
 - [ ] T-06 advanced AFK Outbound port PaymentProcessor (authorize, capture, void) in core.outbound with the adapter T-05 chose and an in-memory stub for tests that answers each outcome by paymentMethodId or orderId, including a call that exceeds the 30-second timeout
       model: ../payments-processing-api/domain-model.zdl:149-163
       test data: stub-driven (no row): the stub decides AUTHORIZED / DECLINED / FAILED, CAPTURED / CAPTURE_FAILED, VOIDED / VOID_FAILED
@@ -51,7 +51,7 @@ review: [ ]
       blocked by: T-01
 - [ ] T-08 bounded HITL Decide what capturePayment does when there is no Payment for the orderId, or it is in a state the ZDL lists neither as from: nor as redelivery no-op (AUTHORIZATION_REQUESTED, DECLINED, FAILED, RETRY_EXHAUSTED, VOID_FAILED): no-op, error to the DLQ, or else; the generated code throws
       model: ../payments-processing-api/domain-model.zdl:180-183
-      test data: data.sql (C-15, C-03, C-11 none)
+      test data: data.sql (C-18, C-03, C-11 none)
 
 ## S1 completed (tracer bullet)
 path: OrderCreated > authorizePayment[authorized] > PaymentAuthorized > confirmOrder > ... > FulfillmentScheduled
@@ -70,7 +70,7 @@ review: [ ]
       blocked by: T-07, T-09
 - [ ] T-11 bounded AFK capturePayment captured: load by orderId, from AUTHORIZED call the processor capture, CAPTURED + capturedAt, persist, emit only PaymentCaptured (with customerEmail and providerReference); no-op, no event, when CAPTURED, CAPTURE_FAILED or VOIDED; other states per T-08
       model: ../arcadia-editions-architecture/business-flows/place-order-flow.zfl:196-199, ../payments-processing-api/domain-model.zdl:180-183, ../payments-processing-api/domain-model.zdl:135-138, ../payments-processing-api/domain-model.zdl:247-256
-      test data: data.sql (C-12 from AUTHORIZED, C-01, C-19, C-04 redelivery)
+      test data: data.sql (C-12, C-15 from AUTHORIZED, C-01, C-17, C-16, C-04 redelivery)
       tests: PaymentsProcessingServiceTest#capturePaymentTest
       blocked by: T-01, T-03, T-04, T-06, T-08
 - [ ] T-12 mechanical AFK FulfillmentScheduledConsumerService: map FulfillmentScheduled.orderId to CapturePaymentInput and call capturePayment
@@ -91,12 +91,12 @@ review: [ ]
 
 - [ ] T-14 bounded AFK getPaymentStatus: find by orderId; none: outcome NO_PAYMENT with noPayment.orderId; any existing Payment: outcome STARTED with started.orderId and started.status; read only. Fix the generated testGetPaymentStatus_201, which expects noPayment and started both set
       model: ../arcadia-editions-architecture/business-flows/place-order-flow.zfl:293-297, ../payments-processing-api/domain-model.zdl:196-198, ../payments-processing-api/domain-model.zdl:110-133
-      test data: data.sql (C-11 NO_PAYMENT, C-15 STARTED in flight, C-01 STARTED captured)
+      test data: data.sql (C-11 NO_PAYMENT, C-18 STARTED in flight, C-01 STARTED captured)
       tests: PaymentsProcessingServiceTest#getPaymentStatusTest, PaymentsProcessingApiControllerTest#getPaymentStatusTest, PaymentsProcessingApiIntegrationTest#testGetPaymentStatus_201
       blocked by: T-01, T-04
-- [ ] T-15 bounded AFK Flow test reservation timer read (payments side): POST /api/payments/status answers NO_PAYMENT for ORD-011 and STARTED (AUTHORIZATION_REQUESTED) for ORD-015, as catalog-inventory's timer reads it
+- [ ] T-15 bounded AFK Flow test reservation timer read (payments side): POST /api/payments/status answers NO_PAYMENT for ORD-011 and STARTED (AUTHORIZATION_REQUESTED) for ORD-018, as catalog-inventory's timer reads it
       model: ../arcadia-editions-architecture/business-flows/place-order-flow.zfl:268-297
-      test data: data.sql (C-11, C-15)
+      test data: data.sql (C-11, C-18)
       tests: PlaceOrderFlowReservationTimerTest
       blocked by: T-14
 
@@ -124,27 +124,27 @@ review: [ ]
 
 - [ ] T-18 advanced AFK authorizePayment failed: a processor error or a call over 30 seconds becomes FAILED + failedAt + failureReason, persist, emit only PaymentFailed with attemptCount
       model: ../arcadia-editions-architecture/business-flows/place-order-flow.zfl:107-121, ../payments-processing-api/domain-model.zdl:149-158, ../payments-processing-api/domain-model.zdl:221-228
-      test data: stub-driven from a new orderId; result shape C-16
+      test data: stub-driven from a new orderId; result shape C-19
       tests: PaymentsProcessingServiceTest#authorizePaymentFailedTest
       blocked by: T-09
 - [ ] T-19 advanced AFK retryPayment: no-op, no event, when there is no Payment, it is not FAILED, or input.attemptCount != attemptCount; never increments attemptCount; below 3 attempts emit PaymentRetried (attemptCount, retriedAt) after the backoff (5 s before attempt 2, 15 s before attempt 3, with the Clock), status stays FAILED; at 3 RETRY_EXHAUSTED, emit PaymentRetryExhausted (reason, exhaustedAt)
       model: ../arcadia-editions-architecture/business-flows/place-order-flow.zfl:124-136, ../payments-processing-api/domain-model.zdl:170-178, ../payments-processing-api/domain-model.zdl:98-102, ../payments-processing-api/domain-model.zdl:230-245
-      test data: data.sql (C-16 a1, C-17 a2, C-18 a3, C-11 none, C-03 and C-08 wrong state)
+      test data: data.sql (C-19 a1, C-20 a2, C-21 a3, C-11 none, C-03 and C-08 wrong state)
       tests: PaymentsProcessingServiceTest#retryPaymentTest
       blocked by: T-01, T-03, T-04
 - [ ] T-20 bounded AFK reauthorizePayment: no-op, no event, when there is no Payment, it is not FAILED, or input.attemptCount != attemptCount; save AUTHORIZATION_REQUESTED with attemptCount + 1 and commit before the processor call; then the outcomes of authorizePayment (T-09, T-16, T-18)
       model: ../arcadia-editions-architecture/business-flows/place-order-flow.zfl:138-146, ../payments-processing-api/domain-model.zdl:160-168, ../payments-processing-api/domain-model.zdl:104-108
-      test data: data.sql (C-16 a1 to a2, C-17 a2 to a3, C-16 with stale attemptCount 2, C-11 none, C-08 wrong state)
+      test data: data.sql (C-19 a1 to a2, C-20 a2 to a3, C-19 with stale attemptCount 2, C-11 none, C-08 wrong state)
       tests: PaymentsProcessingServiceTest#reauthorizePaymentTest
       blocked by: T-16, T-18
 - [ ] T-21 mechanical AFK PaymentFailedConsumerService and PaymentRetriedConsumerService: map both messages of each own channel (RetryPaymentInput / PaymentFailed, ReauthorizePaymentInput / PaymentRetried: orderId, attemptCount) and call retryPayment / reauthorizePayment
       model: ../payments-processing-api/domain-model.zdl:165, ../payments-processing-api/domain-model.zdl:176, ../payments-processing-api/domain-model.zdl:98-108
-      test data: data.sql (C-16)
+      test data: data.sql (C-19)
       tests: PaymentFailedConsumerServiceTest, PaymentRetriedConsumerServiceTest
       blocked by: T-07, T-19, T-20
 - [ ] T-22 bounded AFK Flow test retry loop (payments side): an OrderCreated that fails once then succeeds publishes PaymentFailed, PaymentRetried, PaymentAuthorized (attemptCount 2); one that always fails ends in PaymentRetryExhausted after 3 attempts
       model: ../arcadia-editions-architecture/business-flows/place-order-flow.zfl:114-146, ../arcadia-editions-architecture/business-flows/place-order-flow.zfl:340-344
-      test data: data.sql (C-08 result shape, C-16..C-18)
+      test data: data.sql (C-08 result shape, C-19..C-21)
       tests: PlaceOrderFlowCancelledTest#retriesExhausted, PlaceOrderFlowRetryTest
       blocked by: T-10, T-21
 
@@ -155,22 +155,22 @@ review: [ ]
 
 - [ ] T-23 bounded AFK capturePayment capture failed: the processor refuses the capture, CAPTURE_FAILED + failureReason, persist, emit only PaymentCaptureFailed (reason, failedAt)
       model: ../arcadia-editions-architecture/business-flows/place-order-flow.zfl:190-199, ../payments-processing-api/domain-model.zdl:180-183, ../payments-processing-api/domain-model.zdl:258-264
-      test data: data.sql (C-12, stub-driven); result shape C-19
+      test data: data.sql (C-12, stub-driven); result shape C-16
       tests: PaymentsProcessingServiceTest#capturePaymentFailedTest
       blocked by: T-11
 - [ ] T-24 bounded AFK voidPayment: no-op, no event, when there is no Payment or it is not AUTHORIZED or CAPTURE_FAILED; call the processor void; VOIDED + voidedAt, emit PaymentVoided; refused: VOID_FAILED + voidFailedAt, emit PaymentVoidFailed (failedAt = voidFailedAt); reason per T-05
       model: ../arcadia-editions-architecture/business-flows/place-order-flow.zfl:236-252, ../payments-processing-api/domain-model.zdl:186-194, ../payments-processing-api/domain-model.zdl:141-144, ../payments-processing-api/domain-model.zdl:266-283
-      test data: data.sql (C-19 from CAPTURE_FAILED, C-02 from AUTHORIZED, C-15 / C-09 / C-10 / C-11 no-op)
+      test data: data.sql (C-16 from CAPTURE_FAILED, C-02 from AUTHORIZED, C-18 / C-09 / C-10 / C-11 no-op)
       tests: PaymentsProcessingServiceTest#voidPaymentTest
       blocked by: T-03, T-04, T-05, T-06
 - [ ] T-25 mechanical AFK PaymentCaptureFailedConsumerService: map both messages of the own channel (VoidPaymentInput / PaymentCaptureFailed: orderId, reason) to VoidPaymentInput and call voidPayment
       model: ../payments-processing-api/domain-model.zdl:192, ../payments-processing-api/domain-model.zdl:141-144
-      test data: data.sql (C-19)
+      test data: data.sql (C-16)
       tests: PaymentCaptureFailedConsumerServiceTest
       blocked by: T-07, T-24
 - [ ] T-26 bounded AFK Flow test orderCancelled, capture failed (payments side): a FulfillmentScheduled the stub refuses to capture publishes PaymentCaptureFailed, then PaymentVoided; with a refused void, PaymentVoidFailed; redelivered, nothing
       model: ../arcadia-editions-architecture/business-flows/place-order-flow.zfl:196-199, ../arcadia-editions-architecture/business-flows/place-order-flow.zfl:246-252, ../arcadia-editions-architecture/business-flows/place-order-flow.zfl:340-344
-      test data: data.sql (C-09, C-10 result shapes, C-12, C-19)
+      test data: data.sql (C-09, C-10 result shapes, C-12, C-16)
       tests: PlaceOrderFlowCancelledTest#captureFailed
       blocked by: T-12, T-23, T-25
 
