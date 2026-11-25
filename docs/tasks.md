@@ -32,7 +32,8 @@ review: [ ]
       blocked by: T-07
 - [x] T-02 bounded HITL ArchitectureTest fails: core.application uses the generated producers in asyncapi.provider (outside the hexagon, as zenwave-scripts.zw sets it). Decide: allow the dependency in the rule, or put an outbound port in core.outbound; record it as an ADR. Decided 2026-11-25 by the person: allow it in the rule (EventProducerSDK layer), docs/adr/0001-core-application-uses-generated-event-producers.md
       tests: ArchitectureTest
-- [ ] T-03 mechanical AFK Inject a java.time.Clock (system clock in main, fixed 2026-10-14T10:00:00Z in tests) for every timestamp the service sets and every event time (authorizedAt, declinedAt, failedAt, retriedAt, exhaustedAt, capturedAt, voidedAt)
+- [x] T-03 mechanical AFK Inject a java.time.Clock (system clock in main, fixed 2026-10-14T10:00:00Z in tests) for every timestamp the service sets and every event time (authorizedAt, declinedAt, failedAt, retriedAt, exhaustedAt, capturedAt, voidedAt)
+      done: grok grok-4.7
       tests: PaymentsProcessingServiceTest
       blocked by: T-01
 - [ ] T-04 mechanical AFK PaymentRepository.findByOrderId (JPA and in-memory twin): every command correlates by orderId (unique)
