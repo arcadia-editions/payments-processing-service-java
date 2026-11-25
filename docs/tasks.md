@@ -1,7 +1,7 @@
 # PlaceOrderFlow: tasks
 
 flow: ../arcadia-editions-architecture/business-flows/place-order-flow.zfl
-baseline:
+baseline: baseline/place-order-flow-5
 approved: 2026-11-25 by the person (tasks and slices reviewed)
 branch: afk/place-order-flow
 
