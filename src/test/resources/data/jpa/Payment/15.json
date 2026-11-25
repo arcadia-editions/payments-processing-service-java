@@ -7,14 +7,14 @@
     "customerEmail": "customer018@example.com",
     "amount": 29.99,
     "currency": "EUR",
-    "status": "FAILED",
+    "status": "AUTHORIZATION_REQUESTED",
     "providerReference": null,
-    "attemptCount": 3,
+    "attemptCount": 1,
     "authorizedAt": null,
     "declinedAt": null,
-    "failedAt": "2026-10-14T09:59:52Z",
+    "failedAt": null,
     "capturedAt": null,
     "voidedAt": null,
     "voidFailedAt": null,
-    "failureReason": "processor_timeout"
+    "failureReason": null
 }

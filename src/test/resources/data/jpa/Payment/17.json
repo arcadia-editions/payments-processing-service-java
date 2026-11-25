@@ -1,0 +1,20 @@
+{
+    "id": 801,
+    "version": 0,
+    "orderId": "ORD-020",
+    "customerId": "CUST-020",
+    "paymentMethodId": "PM-020",
+    "customerEmail": "customer020@example.com",
+    "amount": 29.99,
+    "currency": "EUR",
+    "status": "FAILED",
+    "providerReference": null,
+    "attemptCount": 2,
+    "authorizedAt": null,
+    "declinedAt": null,
+    "failedAt": "2026-10-14T09:59:51Z",
+    "capturedAt": null,
+    "voidedAt": null,
+    "voidFailedAt": null,
+    "failureReason": "processor_unavailable"
+}

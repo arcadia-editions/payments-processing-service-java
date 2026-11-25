@@ -23,7 +23,7 @@ The flow also references the other contexts' ZDLs: `../orders-checkout-api`, `..
 | Domain summary | `docs/domain.md` |
 | Board of the flow in progress | `docs/tasks.md` (archived boards in `docs/tasks/`) |
 | Model gap proposals | `docs/proposals/` |
-| Test data and scenario matrix | `src/test/resources/data.sql` (header: scenario and coverage matrices, chains `C-01`..`C-19`, assumptions, the fixed test "now" `2026-10-14T10:00:00Z` read by tests through a fixed `Clock`, not yet in the code; DDL derived from entities, not exported) and `src/test/resources/data/jpa/Payment/<n>.json` |
+| Test data and scenario matrix | `src/test/resources/data.sql` (header: scenario and coverage matrices, chains `C-01`..`C-21`, assumptions, the fixed test "now" `2026-10-14T10:00:00Z` read by tests through a fixed `Clock`, not yet in the code; DDL derived from entities, not exported) and `src/test/resources/data/jpa/Payment/<n>.json` |
 | Generation script | `zenwave-scripts.zw` |
 
 **`zenwave-scripts.zw` and `pom.xml` read the models from a released package** (`@import(...)` and `classpath:`):

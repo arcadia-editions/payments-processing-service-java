@@ -7,14 +7,14 @@
     "customerEmail": "customer016@example.com",
     "amount": 29.99,
     "currency": "EUR",
-    "status": "FAILED",
-    "providerReference": null,
+    "status": "CAPTURE_FAILED",
+    "providerReference": "STANDIN-ORD-016",
     "attemptCount": 1,
-    "authorizedAt": null,
+    "authorizedAt": "2026-10-14T09:54:46Z",
     "declinedAt": null,
-    "failedAt": "2026-10-14T09:59:50Z",
+    "failedAt": null,
     "capturedAt": null,
     "voidedAt": null,
     "voidFailedAt": null,
-    "failureReason": "processor_unavailable"
+    "failureReason": "capture_rejected"
 }
