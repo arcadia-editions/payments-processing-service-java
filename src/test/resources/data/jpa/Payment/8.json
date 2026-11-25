@@ -4,7 +4,7 @@
     "orderId": "ORD-008",
     "customerId": "CUST-008",
     "paymentMethodId": "PM-008",
-    "customerEmail": "customer008example.com",
+    "customerEmail": "customer008@example.com",
     "amount": 29.99,
     "currency": "EUR",
     "status": "RETRY_EXHAUSTED",

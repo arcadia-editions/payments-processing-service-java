@@ -24,7 +24,7 @@ to SpringKafka. T-07 follows whatever pom.xml holds when it starts.
 ## S0 Baseline
 review: [ ]
 
-- [ ] T-01 mechanical AFK Generated tests that should pass do: updateTest without Instant.now(), API ITs with a datasource (EnableDockerCompose commented in BaseWebTestClientTest), testGetPaymentStatus_400 sends a valid body
+- [ ] T-01 mechanical AFK Generated tests that should pass do: updateTest without Instant.now(), API ITs with a datasource (@EnableDockerCompose commented in BaseWebTestClientTest), testGetPaymentStatus_400 sends a valid body
       test data: data/jpa/Payment/1.json, data.sql (C-01, id 1)
       tests: PaymentsProcessingServiceTest, PaymentsProcessingApiControllerTest, PaymentRepositoryIntegrationTest#updateTest, PaymentsProcessingApiIntegrationTest#testGetPaymentStatus_400
 - [ ] T-02 bounded HITL ArchitectureTest fails (to confirm in step 7): core.application uses the generated producers in asyncapi.provider (outside the hexagon, as zenwave-scripts.zw sets it). Decide: allow the dependency in the rule, or put an outbound port in core.outbound; record it as an ADR

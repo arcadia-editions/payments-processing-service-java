@@ -4,7 +4,7 @@
     "orderId": "ORD-017",
     "customerId": "CUST-017",
     "paymentMethodId": "PM-017",
-    "customerEmail": "customer017example.com",
+    "customerEmail": "customer017@example.com",
     "amount": 29.99,
     "currency": "EUR",
     "status": "FAILED",
