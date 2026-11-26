@@ -48,6 +48,9 @@ spring:
 # SpringKafka templates (ADR 0003): topic is required for consumers; producers default to the channel name.
 # Names are the AsyncAPI channel addresses (asyncapi.yml, asyncapi-client.yml).
 app:
+  # payment processor call timeout (ZDL authorizePayment / reauthorizePayment, ADR 0002)
+  payment-processor:
+    timeout: 30s
   kafka:
     topics:
       payment-authorized-event-v1:
