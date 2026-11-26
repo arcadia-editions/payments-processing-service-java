@@ -127,7 +127,8 @@ path: OrderCreated > authorizePayment[declined] > PaymentDeclined > releaseStock
       > OrderCancelled > sendOrderCancelledNotification > end orderCancelled
 review: [ ]
 
-- [/] T-16 bounded AFK authorizePayment declined: the processor declines, DECLINED + declinedAt + failureReason, persist, emit only PaymentDeclined (reason, declinedAt); no retry
+- [x] T-16 bounded AFK authorizePayment declined: the processor declines, DECLINED + declinedAt + failureReason, persist, emit only PaymentDeclined (reason, declinedAt); no retry
+      done: claude-sonnet sonnet
       model: ../arcadia-editions-architecture/business-flows/place-order-flow.zfl:107-121, ../payments-processing-api/domain-model.zdl:157-158, ../payments-processing-api/domain-model.zdl:211-219
       test data: stub-driven from a new orderId; result shape C-03, C-07
       tests: PaymentsProcessingServiceTest#authorizePaymentDeclinedTest
