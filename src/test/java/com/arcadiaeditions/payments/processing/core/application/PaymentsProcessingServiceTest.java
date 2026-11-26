@@ -11,6 +11,7 @@ import com.arcadiaeditions.payments.processing.core.inbound.dtos.*;
 import com.arcadiaeditions.payments.processing.core.outbound.jpa.*;
 import com.arcadiaeditions.payments.processing.core.outbound.processor.PaymentProcessor;
 import com.arcadiaeditions.payments.processing.events.avro.PaymentAuthorized;
+import com.arcadiaeditions.payments.processing.events.avro.PaymentCaptured;
 import com.arcadiaeditions.payments.processing.infrastructure.jpa.inmemory.*;
 import com.arcadiaeditions.payments.processing.infrastructure.processor.StandInPaymentProcessor;
 import java.math.BigDecimal;
@@ -150,7 +151,58 @@ class PaymentsProcessingServiceTest {
     }
 
     @Test
-    void capturePaymentTest() { // TODO: implement this test
+    void capturePaymentTest() { // C-12: AUTHORIZED -> CAPTURED
+        var producer = context.getEventsProducerInMemoryContext().paymentsProcessingEventsProducer();
+        var before = paymentRepository.findByOrderId("ORD-012").orElseThrow();
+
+        var payment = paymentsProcessingService.capturePayment(new CapturePaymentInput().setOrderId("ORD-012"));
+
+        var saved = paymentRepository.findByOrderId("ORD-012").orElseThrow();
+        assertEquals(before.getId(), payment.getId());
+        assertEquals(PaymentStatus.CAPTURED, saved.getStatus());
+        assertEquals(TestClock.NOW, saved.getCapturedAt());
+        assertEquals("STANDIN-ORD-012", saved.getProviderReference());
+        assertEquals(1, producer.getOnPaymentCapturedCapturedMessages().size());
+        assertEquals(
+                1,
+                producer.getCapturedMessages().values().stream()
+                        .mapToInt(List::size)
+                        .sum());
+        var event = (PaymentCaptured)
+                producer.getOnPaymentCapturedCapturedMessages().get(0).getPayload();
+        assertEquals("ORD-012", event.getOrderId().toString());
+        assertEquals(before.getCustomerEmail(), event.getCustomerEmail().toString());
+        assertEquals("STANDIN-ORD-012", event.getProviderReference().toString());
+        assertEquals(TestClock.NOW.toString(), event.getCapturedAt().toString());
+    }
+
+    @Test
+    void capturePaymentFromAuthorizedC20() {
+        var payment = paymentsProcessingService.capturePayment(new CapturePaymentInput().setOrderId("ORD-020"));
+        assertEquals(PaymentStatus.CAPTURED, payment.getStatus());
+        assertEquals(TestClock.NOW, payment.getCapturedAt());
+    }
+
+    @Test
+    void capturePaymentRedeliveryIsNoOp() { // C-01 and C-22 CAPTURED, C-21 CAPTURE_FAILED, C-04 VOIDED
+        var producer = context.getEventsProducerInMemoryContext().paymentsProcessingEventsProducer();
+        for (var orderId : List.of("ORD-001", "ORD-022", "ORD-021", "ORD-004")) {
+            var before = paymentRepository.findByOrderId(orderId).orElseThrow();
+            var payment = paymentsProcessingService.capturePayment(new CapturePaymentInput().setOrderId(orderId));
+            assertEquals(before.getStatus(), payment.getStatus());
+            assertEquals(before.getCapturedAt(), payment.getCapturedAt());
+        }
+        assertTrue(producer.getCapturedMessages().values().stream().allMatch(List::isEmpty));
+    }
+
+    @Test
+    void capturePaymentInOtherStateOrNoPaymentThrows() {
+        assertThrows(
+                RuntimeException.class,
+                () -> paymentsProcessingService.capturePayment(new CapturePaymentInput().setOrderId("ORD-003")));
+        assertThrows(
+                RuntimeException.class,
+                () -> paymentsProcessingService.capturePayment(new CapturePaymentInput().setOrderId("ORD-011")));
     }
 
     @Test
