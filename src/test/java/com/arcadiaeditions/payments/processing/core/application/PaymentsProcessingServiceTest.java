@@ -58,6 +58,15 @@ class PaymentsProcessingServiceTest {
     }
 
     @Test
+    void findByOrderIdTest() {
+        var payment = paymentRepository.findByOrderId("ORD-001").orElseThrow();
+        assertEquals(1L, payment.getId());
+        assertEquals("ORD-001", payment.getOrderId());
+        assertEquals(PaymentStatus.CAPTURED, payment.getStatus());
+        assertTrue(paymentRepository.findByOrderId("ORD-011").isEmpty());
+    }
+
+    @Test
     void clockIsFixedAtTestNow() {
         assertSame(TestClock.FIXED, paymentsProcessingService.clock());
         assertEquals(TestClock.NOW, paymentsProcessingService.clock().instant());
