@@ -44,7 +44,8 @@ review: [ ]
 - [x] T-05 bounded HITL Decide the payment processor integration: provider or a stand-in (the modulith uses one, driven by paymentMethodId triggers), how authorize / capture / void answer, providerReference format, failureReason codes, and which Payment field keeps VoidPaymentInput.reason; record it as an ADR. The ZDL names the processor but no API (fixtures assume A-02, A-03). Decided 2026-11-25 for the demo: the modulith's stand-in, docs/adr/0002-stand-in-payment-processor.md
       model: ../payments-processing-api/domain-model.zdl:149-163, ../payments-processing-api/domain-model.zdl:64-73, ../payments-processing-api/domain-model.zdl:141-144
       test data: data.sql (C-02, C-03, C-12, C-21)
-- [ ] T-06 advanced AFK Outbound port PaymentProcessor (authorize, capture, void) in core.outbound with the adapter T-05 chose and an in-memory stub for tests that answers each outcome by paymentMethodId or orderId, including a call that exceeds the 30-second timeout
+- [x] T-06 advanced AFK Outbound port PaymentProcessor (authorize, capture, void) in core.outbound with the adapter T-05 chose and an in-memory stub for tests that answers each outcome by paymentMethodId or orderId, including a call that exceeds the 30-second timeout
+      done: claude-opus opus
       model: ../payments-processing-api/domain-model.zdl:149-163
       test data: stub-driven (no row): the stub decides AUTHORIZED / DECLINED / FAILED, CAPTURED / CAPTURE_FAILED, VOIDED / VOID_FAILED
       tests: PaymentProcessorStubTest
