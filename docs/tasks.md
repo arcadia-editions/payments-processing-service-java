@@ -158,7 +158,8 @@ review: [ ]
       test data: data.sql (C-16 a1, C-17 a2, C-18 a3, C-11 none, C-03 and C-08 wrong state)
       tests: PaymentsProcessingServiceTest#retryPaymentTest
       blocked by: T-01, T-03, T-04
-- [ ] T-20 bounded AFK reauthorizePayment: no-op, no event, when there is no Payment, it is not FAILED, or input.attemptCount != attemptCount; save AUTHORIZATION_REQUESTED with attemptCount + 1 and commit before the processor call; then the outcomes of authorizePayment (T-09, T-16, T-18)
+- [x] T-20 bounded AFK reauthorizePayment: no-op, no event, when there is no Payment, it is not FAILED, or input.attemptCount != attemptCount; save AUTHORIZATION_REQUESTED with attemptCount + 1 and commit before the processor call; then the outcomes of authorizePayment (T-09, T-16, T-18)
+      done: claude-sonnet sonnet
       model: ../arcadia-editions-architecture/business-flows/place-order-flow.zfl:138-146, ../payments-processing-api/domain-model.zdl:160-168, ../payments-processing-api/domain-model.zdl:104-108
       test data: data.sql (C-16 a1 to a2, C-17 a2 to a3, C-16 with stale attemptCount 2, C-11 none, C-08 wrong state)
       tests: PaymentsProcessingServiceTest#reauthorizePaymentTest
