@@ -108,7 +108,8 @@ path: ReservationExpired > expireReservation > call getPaymentStatus[NoPaymentRe
       > (catalog-inventory releases on NoPaymentResult) > end orderCancelled
 review: [ ]
 
-- [/] T-14 bounded AFK getPaymentStatus: find by orderId; none: outcome NO_PAYMENT with noPayment.orderId; any existing Payment: outcome STARTED with started.orderId and started.status; read only. Fix the generated testGetPaymentStatus_201, which expects noPayment and started both set
+- [x] T-14 bounded AFK getPaymentStatus: find by orderId; none: outcome NO_PAYMENT with noPayment.orderId; any existing Payment: outcome STARTED with started.orderId and started.status; read only. Fix the generated testGetPaymentStatus_201, which expects noPayment and started both set
+      done: claude-sonnet sonnet
       model: ../arcadia-editions-architecture/business-flows/place-order-flow.zfl:293-297, ../payments-processing-api/domain-model.zdl:196-198, ../payments-processing-api/domain-model.zdl:110-133
       test data: data.sql (C-11 NO_PAYMENT, C-15 STARTED in flight, C-01 STARTED captured)
       tests: PaymentsProcessingServiceTest#getPaymentStatusTest, PaymentsProcessingApiControllerTest#getPaymentStatusTest, PaymentsProcessingApiIntegrationTest#testGetPaymentStatus_201
