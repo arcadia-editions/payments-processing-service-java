@@ -1,0 +1,76 @@
+# place-order-flow AFK log
+
+- 2026-11-25 start. baseline/place-order-flow-5 (71f0868). integration worktree .zenwave/work/integration on afk/place-order-flow.
+- routing per person: grok one job at a time, no codex. order: T-07, T-01, T-03, T-04, T-06, then S1, S2. T-27..T-30 wait P-01.
+- docker ports 5432/9092/8081/2181 shared with orders AFK: one full suite at a time, never stop others' containers.
+- S0 base: 71f0868
+- T-07 -> grok grok-4.7 (mechanical), clone .zenwave/work/T-07
+- T-07 merged (grok grok-4.7). application.yml topics + consumer group-id payments_processing; dropped archetype cloud.stream bindings. verified: repo IT context loads, only T-01 updateTest fails.
+- T-01 -> grok grok-4.7, clone .zenwave/work/T-01
+- T-01 merged (grok grok-4.7). fixed-now updateTest, @EnableDockerCompose on, basic auth in WebTestClient, _400 sends orderId null. verified: only _201 fails (T-14).
+- T-03 -> grok grok-4.7, clone .zenwave/work/T-03
+- T-03 grok report complete; my API IT check failed on Docker: ports 5432/9092/8081/2181 held by another compose (n3gd6uxy5j6c, not ours). waiting for ports, then rerun.
+- T-03 merged (grok grok-4.7). Clock bean systemUTC (!test), TestClock.FIXED (test). verified: service test 8 ok, API IT context loads, only _201 (T-14).
+- T-04 -> grok grok-4.7, clone .zenwave/work/T-04
+- T-04 merged (grok grok-4.7). findByOrderId Optional, in-memory twin. verified: service test 9 ok (in-memory); my repo IT rerun blocked by another compose on fixed ports, grok's run 6/6 ok; full suite at S0 review confirms.
+- T-06 -> claude-opus opus, clone .zenwave/work/T-06
+- T-06 merged (claude-opus opus). port core.outbound.processor, StandInPaymentProcessor in infrastructure, timeout app.payment-processor.timeout 30s, extra trigger pm_timeout (not in ADR 0002), attemptCount in request. verified: stub 11, arch 2, service 9 ok; API IT context loads, only _201.
+- S0 all [x]. review-S0 -> claude-sonnet sonnet, clone .zenwave/work/review-S0 at c2db21d. S1 base: c2db21d
+- T-09 -> claude-opus opus, clone .zenwave/work/T-09
+- review-S0 PASS (claude-sonnet). suite: surefire 23/23, failsafe 8 run 1 fail (_201, T-14). accepted: Avro serde missing -> new T-31 (S1, blocks T-13). rejected: Clock accessor test-only (harmless in demo); test-trivia notes. S0 review [x].
+- T-09 merged (claude-opus opus). NOT_SUPPORTED tx so save commits before processor; redelivery returns existing; declined/failed throw until T-16/T-18. verified: service 11, arch 2 ok.
+- T-31 -> claude-sonnet sonnet, clone .zenwave/work/T-31
+- T-31 report 1 (claude-sonnet): Confluent 8.0.0 serde, IT passed only with compose up by hand. sent back: add schema-registry to DockerComposeInitializer.SERVICES, run under normal flow.
+- T-31 merged (claude-sonnet sonnet, 2 rounds). Confluent 8.0.0 serde, schema-registry in DockerComposeInitializer, compose registry restart on-failure. verified: KafkaAvroWiringIntegrationTest 1/1 (2nd try; 1st lost port 2181 race with other project).
+- T-10 -> grok grok-4.7, clone .zenwave/work/T-10
+- T-10 merged (grok grok-4.7). OrderCreatedConsumerMapper in adapters.events. verified: consumer 2, arch 2 ok.
+- T-11 -> claude-sonnet sonnet, clone .zenwave/work/T-11
+- T-11 merged (claude-sonnet sonnet). worker skipped RED; I checked it: 3/4 new tests fail on old impl. verified: service 14, arch 2.
+- T-12 -> grok grok-4.7, clone .zenwave/work/T-12
+- T-12 merged (grok grok-4.7). verified: consumer 2, arch 2.
+- T-13 -> claude-sonnet sonnet, clone .zenwave/work/T-13
+- T-13 merged (claude-sonnet sonnet). OrderCreated->PaymentAuthorized, FulfillmentScheduled->PaymentCaptured over real Kafka. verified: surefire 1/1. S1 all [x]. review-S1 -> claude-opus (every worker implemented part of S1). range c2db21d..d4077d8
+- T-14 -> claude-sonnet sonnet, clone .zenwave/work/T-14
+- S2 base: d4077d8
+- review-S1 PASS (claude-opus; every worker in S1). suite: surefire 33/33, failsafe 9 run 1 fail (_201, T-14). accepted: flow tests named *Test run in Surefire -> T-32 rename + board flow-test names -> *IntegrationTest. rejected: Clock accessor (demo), mapper package, auto-offset-reset earliest (fine for demo). raised to person: lost PaymentAuthorized if Kafka send fails after AUTHORIZED commit (model gap, no outbox) - no proposal yet, ask.
+- T-14 merged (claude-sonnet sonnet). read-only, NO_PAYMENT/STARTED. worker skipped RED; I checked: new tests fail on old impl. verified: service 14, controller 1, API IT 2/2 (3rd try after port races).
+- T-32 -> grok grok-4.7, clone .zenwave/work/T-32
+- T-32 merged (grok grok-4.7). rename only; failsafe 1/1 per grok, test-compile ok.
+- T-15 -> claude-sonnet sonnet, clone .zenwave/work/T-15
+- T-15 merged (claude-sonnet sonnet). worker IT 2/2; my rerun = S2 review suite. S2 all [x]. review-S2 -> claude-opus, range d4077d8..56e69bb
+- T-16 -> claude-sonnet sonnet, clone .zenwave/work/T-16
+- S3 base: 56e69bb
+- review-S2 PASS (claude-opus). suite: surefire 32/32, failsafe 12/12, all green. T-32 fix confirmed. notes only (Clock accessor, unused generated mapper methods): rejected for demo.
+- T-16 merged (claude-sonnet sonnet). DECLINED case, EventsMapper reason<-failureReason. worker skipped RED; I checked. verified: service 15, arch 2.
+- T-17 -> claude-sonnet sonnet, clone .zenwave/work/T-17
+- T-17 merged (claude-sonnet sonnet). worker IT 1/1; my rerun = S3 review suite. S3 all [x]. review-S3 -> claude-opus, range 56e69bb..dbd108e. S4 base: dbd108e
+- T-18 -> claude-opus opus, clone .zenwave/work/T-18
+- T-18 merged (claude-opus opus). FAILED case, default gone. verified: service 16, arch 2.
+- review-S3 PASS (claude-opus). suite surefire 33/33, failsafe 13/13. accepted SHOULD FIX: flow test 'nothing else' weak -> T-33 (S4, blocks T-22). rejected: Clock accessor (demo).
+- T-19 -> claude-opus opus, clone .zenwave/work/T-19
+- T-19 merged (claude-opus opus). backoff from failedAt via replaceable sleeper (Thread.sleep in consumer thread, max 15 s), NOT_SUPPORTED tx. verified: service 18, arch 2.
+- T-20 -> claude-sonnet sonnet, clone .zenwave/work/T-20
+- T-20 merged (claude-sonnet sonnet). shared callProcessorAndSaveOutcome. worker skipped RED; I checked. verified: service 20, arch 2.
+- T-21 -> grok grok-4.7, clone .zenwave/work/T-21
+- person 2026-11-26: transactional outbox in all micros = next loop task (no P-02). P-01 decided A (fix ZDLToAsyncAPIClientPlugin) = next loop; T-27..T-30 stay [!].
+- T-21 merged (grok grok-4.7). setSleeper made public for adapter tests (note). verified: 4+5 consumer, arch 2, service 20.
+- T-33 -> claude-sonnet sonnet, clone .zenwave/work/T-33
+- T-33 merged (claude-sonnet sonnet). FlowEvents helper; mutation proved the check bites. test-only; my rerun = S4 review suite.
+- T-22 -> claude-sonnet sonnet, clone .zenwave/work/T-22
+- T-22 merged (claude-sonnet sonnet). worker IT 2+1 ok; my rerun = S4 review. S4 all [x]. review-S4 -> claude-opus (every worker in S4), range dbd108e..54eae21. S5 base: 54eae21
+- T-23 -> claude-sonnet sonnet, clone .zenwave/work/T-23
+- T-23 merged (claude-sonnet sonnet). CAPTURE_FAILED + failedAt + reason. verified: service 21, arch 2.
+- T-24 -> claude-sonnet sonnet, clone .zenwave/work/T-24
+- review-S4 PASS (claude-opus). surefire 47/47, failsafe 15/15. T-33 fix confirmed. notes only: flow tests check less than unit tests (ok), same-reference asserts in no-op tests (tip sent to T-24), public setSleeper, Clock accessor: rejected for demo.
+- T-24 merged (claude-sonnet sonnet). failureReason = input.reason (ADR 0002). I checked RED 3/3. verified: service 23, arch 2.
+- T-25 -> grok grok-4.7, clone .zenwave/work/T-25
+- T-25 merged (grok grok-4.7). verified: consumer 5, arch 2.
+- T-26 -> claude-sonnet sonnet, clone .zenwave/work/T-26
+- T-26 merged (claude-sonnet sonnet). worker IT 4/4; my rerun = S5 review. S5 all [x]. review-S5 -> claude-opus, range 54eae21..37fbc83
+- review-S5 PASS (claude-opus) but SHOULD FIX accepted: capturePayment sends PaymentCaptureFailed before commit -> own voidPayment may void twice -> T-34 (+ failedAt NULL on CAPTURE_FAILED per approved data). S5 review stays [ ] until fix round. rejected: redundant ensureCanVoidPayment, CAPTURE_FAILED->VOID_FAILED not e2e (stand-in limit), carried notes.
+- T-34 -> claude-sonnet sonnet, clone .zenwave/work/T-34
+- T-34 merged (claude-sonnet sonnet). capturePayment NOT_SUPPORTED, failedAt null on CAPTURE_FAILED. verified: service 23, consumer 2, arch 2; ITs in fix-round review. review-S5 fix round -> claude-opus at db8c34c
+- review-S5 round 2 PASS (claude-opus). surefire 55/55, failsafe 17/17. T-34 resolves both. S5 [x].
+- exit step 1: check mode -> claude-opus, clone .zenwave/work/check at 6eb4908
+- check mode: no gaps (claude-opus, reports/check.md). board archived docs/tasks/place-order-flow-5.md. loop done for this baseline; T-27..T-30 [!] wait next loop (P-01 A); outbox next loop.
+- person asked to version handoff (prompts, reports, logs): removed .zenwave/handoff/ from .gitignore on afk, committed snapshot.
