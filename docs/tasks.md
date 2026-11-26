@@ -93,7 +93,8 @@ review: [ ]
       fixes: .zenwave/handoff/place-order-flow/reports/review-S0.md (model axis, T-07)
       model: ../payments-processing-api/domain-model.zdl:201-283
       tests: a Kafka round-trip IT (produce PaymentAuthorized, consume it back as Avro), e.g. KafkaAvroWiringIntegrationTest
-- [ ] T-13 bounded AFK Flow test completed (payments side): an OrderCreated message publishes PaymentAuthorized on payments-processing.payment-authorized.event.avro.v1; a FulfillmentScheduled message for that order publishes PaymentCaptured
+- [x] T-13 bounded AFK Flow test completed (payments side): an OrderCreated message publishes PaymentAuthorized on payments-processing.payment-authorized.event.avro.v1; a FulfillmentScheduled message for that order publishes PaymentCaptured
+      done: claude-sonnet sonnet
       model: ../arcadia-editions-architecture/business-flows/place-order-flow.zfl:114-121, ../arcadia-editions-architecture/business-flows/place-order-flow.zfl:196-199, ../arcadia-editions-architecture/business-flows/place-order-flow.zfl:340-342
       test data: data.sql (C-01, C-12)
       tests: PlaceOrderFlowCompletedTest
