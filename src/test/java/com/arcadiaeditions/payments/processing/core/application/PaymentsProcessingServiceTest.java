@@ -14,6 +14,8 @@ import com.arcadiaeditions.payments.processing.events.avro.PaymentAuthorized;
 import com.arcadiaeditions.payments.processing.events.avro.PaymentCaptured;
 import com.arcadiaeditions.payments.processing.events.avro.PaymentDeclined;
 import com.arcadiaeditions.payments.processing.events.avro.PaymentFailed;
+import com.arcadiaeditions.payments.processing.events.avro.PaymentRetried;
+import com.arcadiaeditions.payments.processing.events.avro.PaymentRetryExhausted;
 import com.arcadiaeditions.payments.processing.infrastructure.jpa.inmemory.*;
 import com.arcadiaeditions.payments.processing.infrastructure.processor.StandInPaymentProcessor;
 import java.math.BigDecimal;
@@ -217,7 +219,94 @@ class PaymentsProcessingServiceTest {
     }
 
     @Test
-    void retryPaymentTest() { // TODO: implement this test
+    void retryPaymentTest() { // C-16 a1, C-17 a2: PaymentRetried after the backoff, still FAILED
+        var producer = context.getEventsProducerInMemoryContext().paymentsProcessingEventsProducer();
+        var sleeps = new ArrayList<Duration>();
+        paymentsProcessingService.setSleeper(sleeps::add);
+        var cases = List.of(
+                List.of("ORD-016", 1, Duration.ZERO), // failed 09:59:50 + 5 s, already due at 10:00:00
+                List.of("ORD-017", 2, Duration.ofSeconds(6))); // failed 09:59:51 + 15 s, 6 s left
+        for (int i = 0; i < cases.size(); i++) {
+            var orderId = (String) cases.get(i).get(0);
+            var attempt = (Integer) cases.get(i).get(1);
+            var before = paymentRepository.findByOrderId(orderId).orElseThrow();
+
+            var payment = paymentsProcessingService
+                    .retryPayment(new RetryPaymentInput().setOrderId(orderId).setAttemptCount(attempt))
+                    .orElseThrow();
+
+            var saved = paymentRepository.findByOrderId(orderId).orElseThrow();
+            assertEquals(before.getId(), payment.getId());
+            assertEquals(PaymentStatus.FAILED, saved.getStatus());
+            assertEquals(attempt, saved.getAttemptCount());
+            assertEquals(before.getFailedAt(), saved.getFailedAt());
+            assertEquals(cases.get(i).get(2), sleeps.get(i));
+
+            assertEquals(i + 1, producer.getOnPaymentRetriedCapturedMessages().size());
+            assertEquals(
+                    i + 1,
+                    producer.getCapturedMessages().values().stream()
+                            .mapToInt(List::size)
+                            .sum());
+            var event = (PaymentRetried)
+                    producer.getOnPaymentRetriedCapturedMessages().get(i).getPayload();
+            assertEquals(orderId, event.getOrderId().toString());
+            assertEquals(before.getCustomerId(), event.getCustomerId().toString());
+            assertEquals(attempt, event.getAttemptCount());
+            assertEquals(TestClock.NOW.toString(), event.getRetriedAt().toString());
+        }
+    }
+
+    @Test
+    void retryPaymentExhaustedTest() { // C-18 a3: RETRY_EXHAUSTED, no backoff
+        var producer = context.getEventsProducerInMemoryContext().paymentsProcessingEventsProducer();
+        var sleeps = new ArrayList<Duration>();
+        paymentsProcessingService.setSleeper(sleeps::add);
+
+        var payment = paymentsProcessingService
+                .retryPayment(new RetryPaymentInput().setOrderId("ORD-018").setAttemptCount(3))
+                .orElseThrow();
+
+        var saved = paymentRepository.findByOrderId("ORD-018").orElseThrow();
+        assertEquals(saved.getId(), payment.getId());
+        assertEquals(PaymentStatus.RETRY_EXHAUSTED, saved.getStatus());
+        assertEquals(3, saved.getAttemptCount());
+        assertTrue(sleeps.isEmpty());
+        assertEquals(1, producer.getOnPaymentRetryExhaustedCapturedMessages().size());
+        assertEquals(
+                1,
+                producer.getCapturedMessages().values().stream()
+                        .mapToInt(List::size)
+                        .sum());
+        var event = (PaymentRetryExhausted)
+                producer.getOnPaymentRetryExhaustedCapturedMessages().get(0).getPayload();
+        assertEquals("ORD-018", event.getOrderId().toString());
+        assertEquals("CUST-018", event.getCustomerId().toString());
+        assertEquals(3, event.getAttemptCount());
+        assertEquals("processor_timeout", event.getReason().toString());
+        assertEquals(TestClock.NOW.toString(), event.getExhaustedAt().toString());
+    }
+
+    @Test
+    void retryPaymentNoOpTest() { // C-11 none, C-03 DECLINED, C-08 RETRY_EXHAUSTED, C-16 stale attemptCount
+        var producer = context.getEventsProducerInMemoryContext().paymentsProcessingEventsProducer();
+        var sleeps = new ArrayList<Duration>();
+        paymentsProcessingService.setSleeper(sleeps::add);
+        assertTrue(paymentsProcessingService
+                .retryPayment(new RetryPaymentInput().setOrderId("ORD-011").setAttemptCount(1))
+                .isEmpty());
+        for (var c : List.of(List.of("ORD-003", 1), List.of("ORD-008", 3), List.of("ORD-016", 2))) {
+            var orderId = (String) c.get(0);
+            var before = paymentRepository.findByOrderId(orderId).orElseThrow();
+            var payment = paymentsProcessingService.retryPayment(
+                    new RetryPaymentInput().setOrderId(orderId).setAttemptCount((Integer) c.get(1)));
+            var after = paymentRepository.findByOrderId(orderId).orElseThrow();
+            assertEquals(before.getStatus(), after.getStatus());
+            assertEquals(before.getAttemptCount(), after.getAttemptCount());
+            assertEquals(before.getStatus(), payment.map(Payment::getStatus).orElse(before.getStatus()));
+        }
+        assertTrue(sleeps.isEmpty());
+        assertTrue(producer.getCapturedMessages().values().stream().allMatch(List::isEmpty));
     }
 
     @Test

@@ -14,13 +14,16 @@ public interface EventsMapper {
     @Mapping(target = "reason", source = "failureReason")
     com.arcadiaeditions.payments.processing.events.avro.PaymentDeclined asPaymentDeclined(Payment payment);
 
-    com.arcadiaeditions.payments.processing.events.avro.PaymentRetryExhausted asPaymentRetryExhausted(Payment payment);
+    @Mapping(target = "reason", source = "payment.failureReason")
+    com.arcadiaeditions.payments.processing.events.avro.PaymentRetryExhausted asPaymentRetryExhausted(
+            Payment payment, java.time.Instant exhaustedAt); // exhaustedAt: not a Payment field, from the Clock
 
     com.arcadiaeditions.payments.processing.events.avro.PaymentCaptured asPaymentCaptured(Payment payment);
 
     com.arcadiaeditions.payments.processing.events.avro.PaymentAuthorized asPaymentAuthorized(Payment payment);
 
-    com.arcadiaeditions.payments.processing.events.avro.PaymentRetried asPaymentRetried(Payment payment);
+    com.arcadiaeditions.payments.processing.events.avro.PaymentRetried asPaymentRetried(
+            Payment payment, java.time.Instant retriedAt); // retriedAt: not a Payment field, from the Clock
 
     com.arcadiaeditions.payments.processing.events.avro.PaymentCaptureFailed asPaymentCaptureFailed(Payment payment);
 

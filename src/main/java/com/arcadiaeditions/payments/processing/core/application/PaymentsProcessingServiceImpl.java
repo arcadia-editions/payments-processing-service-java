@@ -54,8 +54,24 @@ public class PaymentsProcessingServiceImpl implements PaymentsProcessingService 
         this.paymentProcessor = paymentProcessor;
     }
 
+    /** Waits the retry backoff; tests replace it so they never wait real seconds. */
+    private java.util.function.Consumer<Duration> sleeper = PaymentsProcessingServiceImpl::sleep;
+
     Clock clock() {
         return clock;
+    }
+
+    void setSleeper(java.util.function.Consumer<Duration> sleeper) {
+        this.sleeper = sleeper;
+    }
+
+    private static void sleep(Duration duration) {
+        try {
+            Thread.sleep(duration);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new IllegalStateException("retry backoff interrupted", e);
+        }
     }
 
     /**
@@ -139,28 +155,48 @@ public class PaymentsProcessingServiceImpl implements PaymentsProcessingService 
         return payment;
     }
 
+    static final int MAX_ATTEMPTS = 3;
+
+    /** Backoff before attempt 2 and attempt 3, counted from failedAt. */
+    static final List<Duration> RETRY_BACKOFF = List.of(Duration.ofSeconds(5), Duration.ofSeconds(15));
+
+    /**
+     * Not transactional: the backoff wait holds no transaction; the save commits on its own. Never increments
+     * attemptCount (reauthorizePayment does).
+     */
+    @Transactional(propagation = Propagation.NOT_SUPPORTED)
     public Optional<Payment> retryPayment(RetryPaymentInput input) {
 
         log.debug("Request retryPayment: {}", input);
 
-        // TODO CUSTOM_REQUIRED: load the Payment this transition applies to, e.g. by a correlation key in the input
-        Optional<Payment> foundPayment = Optional.empty();
-        var payment = foundPayment
-                .map(existingPayment -> {
-                    PaymentTransitions.ensureCanRetryPayment(existingPayment);
-                    paymentsProcessingServiceMapper.update(existingPayment, input);
-                    // TODO CUSTOM_REQUIRED: call existingPayment.setStatus(...) with one of FAILED, RETRY_EXHAUSTED
-                    return existingPayment;
-                })
-                .map(paymentRepository::save);
-        if (payment.isPresent()) {
-            // emit events
-            var paymentRetried = eventsMapper.asPaymentRetried(payment.get());
-            eventsProducer.onPaymentRetried(paymentRetried);
-            var paymentRetryExhausted = eventsMapper.asPaymentRetryExhausted(payment.get());
-            eventsProducer.onPaymentRetryExhausted(paymentRetryExhausted);
+        var found = paymentRepository.findByOrderId(input.getOrderId());
+        if (found.isEmpty()) {
+            log.debug("retryPayment no Payment for orderId {}: no-op", input.getOrderId());
+            return found;
         }
-        return payment;
+        var payment = found.get();
+        if (payment.getStatus() != PaymentStatus.FAILED
+                || !Objects.equals(input.getAttemptCount(), payment.getAttemptCount())) {
+            log.debug("retryPayment redelivery or stale input for orderId {}: no-op", input.getOrderId());
+            return found;
+        }
+        PaymentTransitions.ensureCanRetryPayment(payment);
+
+        if (payment.getAttemptCount() >= MAX_ATTEMPTS) {
+            payment.setStatus(PaymentStatus.RETRY_EXHAUSTED);
+            payment = paymentRepository.save(payment);
+            eventsProducer.onPaymentRetryExhausted(eventsMapper.asPaymentRetryExhausted(payment, Instant.now(clock)));
+            return Optional.of(payment);
+        }
+
+        var backoff = RETRY_BACKOFF.get(payment.getAttemptCount() - 1);
+        var dueAt = payment.getFailedAt() != null ? payment.getFailedAt().plus(backoff) : Instant.now(clock);
+        var remaining = Duration.between(Instant.now(clock), dueAt);
+        sleeper.accept(remaining.isNegative() ? Duration.ZERO : remaining);
+
+        payment = paymentRepository.save(payment); // status stays FAILED
+        eventsProducer.onPaymentRetried(eventsMapper.asPaymentRetried(payment, Instant.now(clock)));
+        return Optional.of(payment);
     }
 
     public Payment capturePayment(CapturePaymentInput input) {
