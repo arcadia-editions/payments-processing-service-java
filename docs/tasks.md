@@ -62,7 +62,7 @@ review: [x] claude-sonnet PASS (reports/review-S0.md)
 ## S1 completed (tracer bullet)
 path: OrderCreated > authorizePayment[authorized] > PaymentAuthorized > confirmOrder > ... > FulfillmentScheduled
       > capturePayment > PaymentCaptured > sendOrderConfirmation > end completed
-review: [ ]
+review: [x] claude-opus PASS (reports/review-S1.md; every worker implemented part of S1)
 
 - [x] T-09 advanced AFK authorizePayment authorized: creation only (no-op, no event, when a Payment for orderId exists in any state); save AUTHORIZATION_REQUESTED with attemptCount 1 and commit before calling the processor; on AUTHORIZED set providerReference + authorizedAt, persist, emit only PaymentAuthorized (not every alternative, as generated)
       done: claude-opus opus
@@ -99,13 +99,16 @@ review: [ ]
       test data: data.sql (C-01, C-12)
       tests: PlaceOrderFlowCompletedTest
       blocked by: T-10, T-12, T-31
+- [ ] T-32 mechanical AFK Rename the flow test PlaceOrderFlowCompletedTest to PlaceOrderFlowCompletedIntegrationTest (Spring + Docker tests run with Failsafe: overlay project rules), so plain mvn test needs no Docker and the suite starts compose once per JVM
+      fixes: .zenwave/handoff/place-order-flow/reports/review-S1.md (standards axis)
+      tests: PlaceOrderFlowCompletedIntegrationTest
 
 ## S2 reservation timer read (getPaymentStatus)
 path: ReservationExpired > expireReservation > call getPaymentStatus[NoPaymentResult | PaymentStartedResult]
       > (catalog-inventory releases on NoPaymentResult) > end orderCancelled
 review: [ ]
 
-- [ ] T-14 bounded AFK getPaymentStatus: find by orderId; none: outcome NO_PAYMENT with noPayment.orderId; any existing Payment: outcome STARTED with started.orderId and started.status; read only. Fix the generated testGetPaymentStatus_201, which expects noPayment and started both set
+- [/] T-14 bounded AFK getPaymentStatus: find by orderId; none: outcome NO_PAYMENT with noPayment.orderId; any existing Payment: outcome STARTED with started.orderId and started.status; read only. Fix the generated testGetPaymentStatus_201, which expects noPayment and started both set
       model: ../arcadia-editions-architecture/business-flows/place-order-flow.zfl:293-297, ../payments-processing-api/domain-model.zdl:196-198, ../payments-processing-api/domain-model.zdl:110-133
       test data: data.sql (C-11 NO_PAYMENT, C-15 STARTED in flight, C-01 STARTED captured)
       tests: PaymentsProcessingServiceTest#getPaymentStatusTest, PaymentsProcessingApiControllerTest#getPaymentStatusTest, PaymentsProcessingApiIntegrationTest#testGetPaymentStatus_201
@@ -113,7 +116,7 @@ review: [ ]
 - [ ] T-15 bounded AFK Flow test reservation timer read (payments side): POST /api/payments/status answers NO_PAYMENT for ORD-011 and STARTED (AUTHORIZATION_REQUESTED) for ORD-015, as catalog-inventory's timer reads it
       model: ../arcadia-editions-architecture/business-flows/place-order-flow.zfl:268-297
       test data: data.sql (C-11, C-15)
-      tests: PlaceOrderFlowReservationTimerTest
+      tests: PlaceOrderFlowReservationTimerIntegrationTest
       blocked by: T-14
 
 ## S3 orderCancelled (payment declined)
@@ -129,7 +132,7 @@ review: [ ]
 - [ ] T-17 bounded AFK Flow test orderCancelled, declined (payments side): an OrderCreated the stub declines publishes PaymentDeclined and nothing else
       model: ../arcadia-editions-architecture/business-flows/place-order-flow.zfl:114-121, ../arcadia-editions-architecture/business-flows/place-order-flow.zfl:340-344
       test data: data.sql (C-07 result shape)
-      tests: PlaceOrderFlowCancelledTest#declined
+      tests: PlaceOrderFlowCancelledIntegrationTest#declined
       blocked by: T-10, T-16
 
 ## S4 orderCancelled (retries exhausted) and the retry loop
@@ -161,7 +164,7 @@ review: [ ]
 - [ ] T-22 bounded AFK Flow test retry loop (payments side): an OrderCreated that fails once then succeeds publishes PaymentFailed, PaymentRetried, PaymentAuthorized (attemptCount 2); one that always fails ends in PaymentRetryExhausted after 3 attempts
       model: ../arcadia-editions-architecture/business-flows/place-order-flow.zfl:114-146, ../arcadia-editions-architecture/business-flows/place-order-flow.zfl:340-344
       test data: data.sql (C-08 result shape, C-16..C-18)
-      tests: PlaceOrderFlowCancelledTest#retriesExhausted, PlaceOrderFlowRetryTest
+      tests: PlaceOrderFlowCancelledIntegrationTest#retriesExhausted, PlaceOrderFlowRetryIntegrationTest
       blocked by: T-10, T-21
 
 ## S5 orderCancelled (capture failed: void)
@@ -187,7 +190,7 @@ review: [ ]
 - [ ] T-26 bounded AFK Flow test orderCancelled, capture failed (payments side): a FulfillmentScheduled the stub refuses to capture publishes PaymentCaptureFailed, then PaymentVoided; with a refused void, PaymentVoidFailed; redelivered, nothing
       model: ../arcadia-editions-architecture/business-flows/place-order-flow.zfl:196-199, ../arcadia-editions-architecture/business-flows/place-order-flow.zfl:246-252, ../arcadia-editions-architecture/business-flows/place-order-flow.zfl:340-344
       test data: data.sql (C-09, C-10 result shapes, C-12, C-21)
-      tests: PlaceOrderFlowCancelledTest#captureFailed
+      tests: PlaceOrderFlowCancelledIntegrationTest#captureFailed
       blocked by: T-12, T-23, T-25
 
 ## S6 orderCancelled (fulfillment failed: void)
@@ -203,7 +206,7 @@ review: [ ]
 - [!] T-28 bounded AFK Flow test orderCancelled, fulfillment failed (payments side): a FulfillmentFailed message voids an AUTHORIZED payment and publishes PaymentVoided
       model: ../arcadia-editions-architecture/business-flows/place-order-flow.zfl:236-252, ../arcadia-editions-architecture/business-flows/place-order-flow.zfl:340-344
       test data: data.sql (C-04)
-      tests: PlaceOrderFlowCancelledTest#fulfillmentFailed
+      tests: PlaceOrderFlowCancelledIntegrationTest#fulfillmentFailed
       blocked by: T-27
       blocked: P-01
 
@@ -221,6 +224,6 @@ review: [ ]
 - [!] T-30 bounded AFK Flow test late authorization (payments side): OrderConfirmationRejected for ORD-005 (STOCK_NOT_HELD) and ORD-006 (ORDER_CANCELLED) voids the late AUTHORIZED payment and publishes PaymentVoided
       model: ../arcadia-editions-architecture/business-flows/place-order-flow.zfl:236-252, ../arcadia-editions-architecture/business-flows/place-order-flow.zfl:340-344
       test data: data.sql (C-05, C-06)
-      tests: PlaceOrderFlowLateAuthorizationTest
+      tests: PlaceOrderFlowLateAuthorizationIntegrationTest
       blocked by: T-29
       blocked: P-01
