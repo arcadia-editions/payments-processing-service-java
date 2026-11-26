@@ -125,7 +125,7 @@ review: [x] claude-opus PASS (reports/review-S2.md)
 ## S3 orderCancelled (payment declined)
 path: OrderCreated > authorizePayment[declined] > PaymentDeclined > releaseStock > StockReleased > cancelOrder
       > OrderCancelled > sendOrderCancelledNotification > end orderCancelled
-review: [ ]
+review: [x] claude-opus PASS (reports/review-S3.md; SHOULD FIX -> T-33)
 
 - [x] T-16 bounded AFK authorizePayment declined: the processor declines, DECLINED + declinedAt + failureReason, persist, emit only PaymentDeclined (reason, declinedAt); no retry
       done: claude-sonnet sonnet
@@ -146,7 +146,8 @@ path: OrderCreated > authorizePayment[failed] > PaymentFailed > retryPayment[ret
       > PaymentRetryExhausted > releaseStock > ... > end orderCancelled
 review: [ ]
 
-- [ ] T-18 advanced AFK authorizePayment failed: a processor error or a call over 30 seconds becomes FAILED + failedAt + failureReason, persist, emit only PaymentFailed with attemptCount
+- [x] T-18 advanced AFK authorizePayment failed: a processor error or a call over 30 seconds becomes FAILED + failedAt + failureReason, persist, emit only PaymentFailed with attemptCount
+      done: claude-opus opus
       model: ../arcadia-editions-architecture/business-flows/place-order-flow.zfl:107-121, ../payments-processing-api/domain-model.zdl:149-158, ../payments-processing-api/domain-model.zdl:221-228
       test data: stub-driven from a new orderId; result shape C-16
       tests: PaymentsProcessingServiceTest#authorizePaymentFailedTest
@@ -166,11 +167,14 @@ review: [ ]
       test data: data.sql (C-16)
       tests: PaymentFailedConsumerServiceTest, PaymentRetriedConsumerServiceTest
       blocked by: T-07, T-19, T-20
+- [ ] T-33 bounded AFK Flow tests prove "nothing else": in PlaceOrderFlowCancelledIntegrationTest collect every record whose payload carries the orderId, of any type and in both loops (a shared helper per orderId, also usable by PlaceOrderFlowCompletedIntegrationTest), and assert exactly one PaymentDeclined; later flow tests (T-22, T-26) reuse it
+      fixes: .zenwave/handoff/place-order-flow/reports/review-S3.md (model axis, T-17)
+      tests: PlaceOrderFlowCancelledIntegrationTest
 - [ ] T-22 bounded AFK Flow test retry loop (payments side): an OrderCreated that fails once then succeeds publishes PaymentFailed, PaymentRetried, PaymentAuthorized (attemptCount 2); one that always fails ends in PaymentRetryExhausted after 3 attempts
       model: ../arcadia-editions-architecture/business-flows/place-order-flow.zfl:114-146, ../arcadia-editions-architecture/business-flows/place-order-flow.zfl:340-344
       test data: data.sql (C-08 result shape, C-16..C-18)
       tests: PlaceOrderFlowCancelledIntegrationTest#retriesExhausted, PlaceOrderFlowRetryIntegrationTest
-      blocked by: T-10, T-21
+      blocked by: T-10, T-21, T-33
 
 ## S5 orderCancelled (capture failed: void)
 path: FulfillmentScheduled > capturePayment[PaymentCaptureFailed] > voidPayment[voided | void-failed]
