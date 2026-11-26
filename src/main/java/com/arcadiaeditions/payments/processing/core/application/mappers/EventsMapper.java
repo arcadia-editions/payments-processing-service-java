@@ -28,8 +28,11 @@ public interface EventsMapper {
     @Mapping(target = "reason", source = "failureReason")
     com.arcadiaeditions.payments.processing.events.avro.PaymentCaptureFailed asPaymentCaptureFailed(Payment payment);
 
+    @Mapping(target = "reason", source = "failureReason")
     com.arcadiaeditions.payments.processing.events.avro.PaymentVoided asPaymentVoided(Payment payment);
 
+    @Mapping(target = "reason", source = "failureReason")
+    @Mapping(target = "failedAt", source = "voidFailedAt")
     com.arcadiaeditions.payments.processing.events.avro.PaymentVoidFailed asPaymentVoidFailed(Payment payment);
 
     @Mapping(target = "reason", source = "failureReason")
