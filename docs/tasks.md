@@ -170,7 +170,8 @@ review: [ ]
       test data: data.sql (C-16)
       tests: PaymentFailedConsumerServiceTest, PaymentRetriedConsumerServiceTest
       blocked by: T-07, T-19, T-20
-- [ ] T-33 bounded AFK Flow tests prove "nothing else": in PlaceOrderFlowCancelledIntegrationTest collect every record whose payload carries the orderId, of any type and in both loops (a shared helper per orderId, also usable by PlaceOrderFlowCompletedIntegrationTest), and assert exactly one PaymentDeclined; later flow tests (T-22, T-26) reuse it
+- [x] T-33 bounded AFK Flow tests prove "nothing else": in PlaceOrderFlowCancelledIntegrationTest collect every record whose payload carries the orderId, of any type and in both loops (a shared helper per orderId, also usable by PlaceOrderFlowCompletedIntegrationTest), and assert exactly one PaymentDeclined; later flow tests (T-22, T-26) reuse it
+      done: claude-sonnet sonnet
       fixes: .zenwave/handoff/place-order-flow/reports/review-S3.md (model axis, T-17)
       tests: PlaceOrderFlowCancelledIntegrationTest
 - [ ] T-22 bounded AFK Flow test retry loop (payments side): an OrderCreated that fails once then succeeds publishes PaymentFailed, PaymentRetried, PaymentAuthorized (attemptCount 2); one that always fails ends in PaymentRetryExhausted after 3 attempts
