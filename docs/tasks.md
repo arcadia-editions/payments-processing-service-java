@@ -152,7 +152,8 @@ review: [ ]
       test data: stub-driven from a new orderId; result shape C-16
       tests: PaymentsProcessingServiceTest#authorizePaymentFailedTest
       blocked by: T-09
-- [ ] T-19 advanced AFK retryPayment: no-op, no event, when there is no Payment, it is not FAILED, or input.attemptCount != attemptCount; never increments attemptCount; below 3 attempts emit PaymentRetried (attemptCount, retriedAt) after the backoff (5 s before attempt 2, 15 s before attempt 3, with the Clock), status stays FAILED; at 3 RETRY_EXHAUSTED, emit PaymentRetryExhausted (reason, exhaustedAt)
+- [x] T-19 advanced AFK retryPayment: no-op, no event, when there is no Payment, it is not FAILED, or input.attemptCount != attemptCount; never increments attemptCount; below 3 attempts emit PaymentRetried (attemptCount, retriedAt) after the backoff (5 s before attempt 2, 15 s before attempt 3, with the Clock), status stays FAILED; at 3 RETRY_EXHAUSTED, emit PaymentRetryExhausted (reason, exhaustedAt)
+      done: claude-opus opus
       model: ../arcadia-editions-architecture/business-flows/place-order-flow.zfl:124-136, ../payments-processing-api/domain-model.zdl:170-178, ../payments-processing-api/domain-model.zdl:98-102, ../payments-processing-api/domain-model.zdl:230-245
       test data: data.sql (C-16 a1, C-17 a2, C-18 a3, C-11 none, C-03 and C-08 wrong state)
       tests: PaymentsProcessingServiceTest#retryPaymentTest
