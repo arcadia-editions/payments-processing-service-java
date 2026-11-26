@@ -107,7 +107,7 @@ review: [x] claude-opus PASS (reports/review-S1.md; every worker implemented par
 ## S2 reservation timer read (getPaymentStatus)
 path: ReservationExpired > expireReservation > call getPaymentStatus[NoPaymentResult | PaymentStartedResult]
       > (catalog-inventory releases on NoPaymentResult) > end orderCancelled
-review: [ ]
+review: [x] claude-opus PASS (reports/review-S2.md)
 
 - [x] T-14 bounded AFK getPaymentStatus: find by orderId; none: outcome NO_PAYMENT with noPayment.orderId; any existing Payment: outcome STARTED with started.orderId and started.status; read only. Fix the generated testGetPaymentStatus_201, which expects noPayment and started both set
       done: claude-sonnet sonnet
@@ -127,7 +127,7 @@ path: OrderCreated > authorizePayment[declined] > PaymentDeclined > releaseStock
       > OrderCancelled > sendOrderCancelledNotification > end orderCancelled
 review: [ ]
 
-- [ ] T-16 bounded AFK authorizePayment declined: the processor declines, DECLINED + declinedAt + failureReason, persist, emit only PaymentDeclined (reason, declinedAt); no retry
+- [/] T-16 bounded AFK authorizePayment declined: the processor declines, DECLINED + declinedAt + failureReason, persist, emit only PaymentDeclined (reason, declinedAt); no retry
       model: ../arcadia-editions-architecture/business-flows/place-order-flow.zfl:107-121, ../payments-processing-api/domain-model.zdl:157-158, ../payments-processing-api/domain-model.zdl:211-219
       test data: stub-driven from a new orderId; result shape C-03, C-07
       tests: PaymentsProcessingServiceTest#authorizePaymentDeclinedTest
