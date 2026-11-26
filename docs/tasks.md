@@ -115,7 +115,8 @@ review: [ ]
       test data: data.sql (C-11 NO_PAYMENT, C-15 STARTED in flight, C-01 STARTED captured)
       tests: PaymentsProcessingServiceTest#getPaymentStatusTest, PaymentsProcessingApiControllerTest#getPaymentStatusTest, PaymentsProcessingApiIntegrationTest#testGetPaymentStatus_201
       blocked by: T-01, T-04
-- [ ] T-15 bounded AFK Flow test reservation timer read (payments side): POST /api/payments/status answers NO_PAYMENT for ORD-011 and STARTED (AUTHORIZATION_REQUESTED) for ORD-015, as catalog-inventory's timer reads it
+- [x] T-15 bounded AFK Flow test reservation timer read (payments side): POST /api/payments/status answers NO_PAYMENT for ORD-011 and STARTED (AUTHORIZATION_REQUESTED) for ORD-015, as catalog-inventory's timer reads it
+      done: claude-sonnet sonnet
       model: ../arcadia-editions-architecture/business-flows/place-order-flow.zfl:268-297
       test data: data.sql (C-11, C-15)
       tests: PlaceOrderFlowReservationTimerIntegrationTest
