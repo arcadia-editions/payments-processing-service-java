@@ -157,22 +157,28 @@ public class PaymentsProcessingServiceImpl implements PaymentsProcessingService 
 
         log.debug("Request capturePayment: {}", input);
 
-        // TODO CUSTOM_REQUIRED: load the Payment this transition applies to, e.g. by a correlation key in the input
-        Optional<Payment> foundPayment = Optional.empty();
-        var payment = foundPayment
-                .map(existingPayment -> {
-                    PaymentTransitions.ensureCanCapturePayment(existingPayment);
-                    paymentsProcessingServiceMapper.update(existingPayment, input);
-                    // TODO CUSTOM_REQUIRED: call existingPayment.setStatus(...) with one of CAPTURED, CAPTURE_FAILED
-                    return existingPayment;
-                })
-                .map(paymentRepository::save)
-                .orElseThrow();
-        // emit events
-        var paymentCaptured = eventsMapper.asPaymentCaptured(payment);
-        eventsProducer.onPaymentCaptured(paymentCaptured);
-        var paymentCaptureFailed = eventsMapper.asPaymentCaptureFailed(payment);
-        eventsProducer.onPaymentCaptureFailed(paymentCaptureFailed);
+        var payment = paymentRepository.findByOrderId(input.getOrderId()).orElseThrow();
+        switch (payment.getStatus()) {
+            case CAPTURED, CAPTURE_FAILED, VOIDED -> {
+                log.debug("capturePayment redelivery for orderId {}: no-op", input.getOrderId());
+                return payment;
+            }
+            default -> PaymentTransitions.ensureCanCapturePayment(payment);
+        }
+        var result = paymentProcessor.capture(new PaymentProcessor.CaptureRequest(
+                payment.getOrderId(),
+                payment.getPaymentMethodId(),
+                payment.getProviderReference(),
+                payment.getAmount(),
+                payment.getCurrency()));
+        if (!result.captured()) {
+            // TODO T-23 (CAPTURE_FAILED -> PaymentCaptureFailed)
+            throw new UnsupportedOperationException("capturePayment capture failure not implemented yet");
+        }
+        payment.setStatus(PaymentStatus.CAPTURED);
+        payment.setCapturedAt(Instant.now(clock));
+        payment = paymentRepository.save(payment);
+        eventsProducer.onPaymentCaptured(eventsMapper.asPaymentCaptured(payment));
         return payment;
     }
 
