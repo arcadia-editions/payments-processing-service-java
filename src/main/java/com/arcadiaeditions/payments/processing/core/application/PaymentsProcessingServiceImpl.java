@@ -101,10 +101,13 @@ public class PaymentsProcessingServiceImpl implements PaymentsProcessingService 
                 payment = paymentRepository.save(payment);
                 eventsProducer.onPaymentDeclined(eventsMapper.asPaymentDeclined(payment));
             }
-            // TODO T-18 (FAILED -> PaymentFailed)
-            default ->
-                throw new UnsupportedOperationException(
-                        "authorizePayment outcome not implemented yet: " + result.outcome());
+            case FAILED -> { // processor error or timeout (30 s, enforced by the processor adapter)
+                payment.setStatus(PaymentStatus.FAILED);
+                payment.setFailedAt(Instant.now(clock));
+                payment.setFailureReason(result.reason());
+                payment = paymentRepository.save(payment);
+                eventsProducer.onPaymentFailed(eventsMapper.asPaymentFailed(payment));
+            }
         }
         return payment;
     }

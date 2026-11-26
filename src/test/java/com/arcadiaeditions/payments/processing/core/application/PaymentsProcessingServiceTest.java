@@ -13,6 +13,7 @@ import com.arcadiaeditions.payments.processing.core.outbound.processor.PaymentPr
 import com.arcadiaeditions.payments.processing.events.avro.PaymentAuthorized;
 import com.arcadiaeditions.payments.processing.events.avro.PaymentCaptured;
 import com.arcadiaeditions.payments.processing.events.avro.PaymentDeclined;
+import com.arcadiaeditions.payments.processing.events.avro.PaymentFailed;
 import com.arcadiaeditions.payments.processing.infrastructure.jpa.inmemory.*;
 import com.arcadiaeditions.payments.processing.infrastructure.processor.StandInPaymentProcessor;
 import java.math.BigDecimal;
@@ -115,6 +116,45 @@ class PaymentsProcessingServiceTest {
         assertEquals("CUST-099", event.getCustomerId().toString());
         assertEquals("card_declined", event.getReason().toString());
         assertEquals(TestClock.NOW.toString(), event.getDeclinedAt().toString());
+    }
+
+    @Test
+    void authorizePaymentFailedTest() { // result shape C-16: FAILED a1, failedAt, failureReason
+        var producer = context.getEventsProducerInMemoryContext().paymentsProcessingEventsProducer();
+        var cases = List.of(
+                List.of("ORD-097", StandInPaymentProcessor.PM_FAIL_ALWAYS, "processor_unavailable"),
+                List.of("ORD-096", StandInPaymentProcessor.PM_FAIL_ONCE, "processor_unavailable"),
+                List.of("ORD-095", StandInPaymentProcessor.PM_TIMEOUT, "processor_timeout"));
+        for (int i = 0; i < cases.size(); i++) {
+            var orderId = cases.get(i).get(0);
+            var reason = cases.get(i).get(2);
+            var payment = paymentsProcessingService.authorizePayment(newAuthorizePaymentInput(orderId)
+                    .setPaymentMethodId(cases.get(i).get(1)));
+
+            var saved = paymentRepository.findByOrderId(orderId).orElseThrow();
+            assertEquals(saved.getId(), payment.getId());
+            assertEquals(PaymentStatus.FAILED, saved.getStatus());
+            assertEquals(1, saved.getAttemptCount());
+            assertEquals(TestClock.NOW, saved.getFailedAt());
+            assertEquals(reason, saved.getFailureReason());
+            assertNull(saved.getAuthorizedAt());
+            assertNull(saved.getDeclinedAt());
+            assertNull(saved.getProviderReference());
+
+            assertEquals(i + 1, producer.getOnPaymentFailedCapturedMessages().size());
+            assertEquals(
+                    i + 1,
+                    producer.getCapturedMessages().values().stream()
+                            .mapToInt(List::size)
+                            .sum());
+            var event = (PaymentFailed)
+                    producer.getOnPaymentFailedCapturedMessages().get(i).getPayload();
+            assertEquals(orderId, event.getOrderId().toString());
+            assertEquals("CUST-099", event.getCustomerId().toString());
+            assertEquals(1, event.getAttemptCount());
+            assertEquals(reason, event.getReason().toString());
+            assertEquals(TestClock.NOW.toString(), event.getFailedAt().toString());
+        }
     }
 
     @Test
