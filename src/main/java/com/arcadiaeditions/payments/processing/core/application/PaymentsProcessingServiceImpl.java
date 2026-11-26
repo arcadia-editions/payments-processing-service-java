@@ -224,8 +224,12 @@ public class PaymentsProcessingServiceImpl implements PaymentsProcessingService 
                 payment.getAmount(),
                 payment.getCurrency()));
         if (!result.captured()) {
-            // TODO T-23 (CAPTURE_FAILED -> PaymentCaptureFailed)
-            throw new UnsupportedOperationException("capturePayment capture failure not implemented yet");
+            payment.setStatus(PaymentStatus.CAPTURE_FAILED);
+            payment.setFailedAt(Instant.now(clock));
+            payment.setFailureReason(result.reason());
+            payment = paymentRepository.save(payment);
+            eventsProducer.onPaymentCaptureFailed(eventsMapper.asPaymentCaptureFailed(payment));
+            return payment;
         }
         payment.setStatus(PaymentStatus.CAPTURED);
         payment.setCapturedAt(Instant.now(clock));

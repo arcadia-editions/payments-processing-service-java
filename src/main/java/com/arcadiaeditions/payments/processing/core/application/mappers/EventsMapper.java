@@ -25,6 +25,7 @@ public interface EventsMapper {
     com.arcadiaeditions.payments.processing.events.avro.PaymentRetried asPaymentRetried(
             Payment payment, java.time.Instant retriedAt); // retriedAt: not a Payment field, from the Clock
 
+    @Mapping(target = "reason", source = "failureReason")
     com.arcadiaeditions.payments.processing.events.avro.PaymentCaptureFailed asPaymentCaptureFailed(Payment payment);
 
     com.arcadiaeditions.payments.processing.events.avro.PaymentVoided asPaymentVoided(Payment payment);
