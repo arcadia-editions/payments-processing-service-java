@@ -133,7 +133,8 @@ review: [ ]
       test data: stub-driven from a new orderId; result shape C-03, C-07
       tests: PaymentsProcessingServiceTest#authorizePaymentDeclinedTest
       blocked by: T-09
-- [ ] T-17 bounded AFK Flow test orderCancelled, declined (payments side): an OrderCreated the stub declines publishes PaymentDeclined and nothing else
+- [x] T-17 bounded AFK Flow test orderCancelled, declined (payments side): an OrderCreated the stub declines publishes PaymentDeclined and nothing else
+      done: claude-sonnet sonnet
       model: ../arcadia-editions-architecture/business-flows/place-order-flow.zfl:114-121, ../arcadia-editions-architecture/business-flows/place-order-flow.zfl:340-344
       test data: data.sql (C-07 result shape)
       tests: PlaceOrderFlowCancelledIntegrationTest#declined
