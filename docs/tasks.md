@@ -252,8 +252,10 @@ review: [ ]
       blocked by: T-29
       blocked: P-01 (decided A, next loop)
 
-## Next loop (decided 2026-11-26 by the person, not in this board)
+<!--
+Next loop (decided 2026-11-26 by the person, not in this board)
 
 - Transactional outbox in every service that sends Kafka messages (closes the lost-PaymentAuthorized gap of review-S1:
   a failed send after the AUTHORIZED commit is never re-sent). Not a proposal: a new task of the next loop.
 - P-01 option A: fix zenwave-sdk ZDLToAsyncAPIClientPlugin, release service-all 0.2.1, regenerate; then T-27..T-30.
+-->
