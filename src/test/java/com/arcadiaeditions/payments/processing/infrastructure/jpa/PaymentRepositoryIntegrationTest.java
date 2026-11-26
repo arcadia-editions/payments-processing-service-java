@@ -32,6 +32,20 @@ class PaymentRepositoryIntegrationTest extends BaseRepositoryIntegrationTest {
     }
 
     @Test
+    void findByOrderIdTest() {
+        // C-01: the captured payment for ORD-001.
+        var payment = paymentRepository.findByOrderId("ORD-001").orElseThrow();
+        Assertions.assertEquals(1L, payment.getId());
+        Assertions.assertEquals("ORD-001", payment.getOrderId());
+        Assertions.assertEquals("CUST-001", payment.getCustomerId());
+        Assertions.assertEquals(PaymentStatus.CAPTURED, payment.getStatus());
+        Assertions.assertEquals(0, new BigDecimal("49.99").compareTo(payment.getAmount()));
+
+        // C-11: no Payment row for ORD-011.
+        Assertions.assertTrue(paymentRepository.findByOrderId("ORD-011").isEmpty());
+    }
+
+    @Test
     void saveTest() {
         Payment payment = new Payment();
         payment.setOrderId("");
