@@ -204,7 +204,8 @@ review: [ ]
       test data: data.sql (C-21)
       tests: PaymentCaptureFailedConsumerServiceTest
       blocked by: T-07, T-24
-- [ ] T-26 bounded AFK Flow test orderCancelled, capture failed (payments side): a FulfillmentScheduled the stub refuses to capture publishes PaymentCaptureFailed, then PaymentVoided; with a refused void, PaymentVoidFailed; redelivered, nothing
+- [x] T-26 bounded AFK Flow test orderCancelled, capture failed (payments side): a FulfillmentScheduled the stub refuses to capture publishes PaymentCaptureFailed, then PaymentVoided; with a refused void, PaymentVoidFailed; redelivered, nothing
+      done: claude-sonnet sonnet
       model: ../arcadia-editions-architecture/business-flows/place-order-flow.zfl:196-199, ../arcadia-editions-architecture/business-flows/place-order-flow.zfl:246-252, ../arcadia-editions-architecture/business-flows/place-order-flow.zfl:340-344
       test data: data.sql (C-09, C-10 result shapes, C-12, C-21)
       tests: PlaceOrderFlowCancelledIntegrationTest#captureFailed
