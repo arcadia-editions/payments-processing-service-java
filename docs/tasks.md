@@ -210,6 +210,11 @@ review: [ ]
       test data: data.sql (C-09, C-10 result shapes, C-12, C-21)
       tests: PlaceOrderFlowCancelledIntegrationTest#captureFailed
       blocked by: T-12, T-23, T-25
+- [ ] T-34 bounded AFK capturePayment commits before it sends (like authorizePayment: @Transactional(propagation = NOT_SUPPORTED), save commits, then send), so the own-channel PaymentCaptureFailed -> voidPayment never reads the row still AUTHORIZED and voids twice; and on capture failure do not store Payment.failedAt (approved data: failed_at NULL on CAPTURE_FAILED, C-21 / C-09, A-05): pass the instant to the mapper for PaymentCaptureFailed.failedAt
+      fixes: .zenwave/handoff/place-order-flow/reports/review-S5.md (model axis SHOULD FIX and NOTE failedAt)
+      model: ../payments-processing-api/domain-model.zdl:180-183, ../payments-processing-api/domain-model.zdl:258-264, ../arcadia-editions-architecture/business-flows/place-order-flow.zfl:246-252
+      test data: data.sql (C-12, C-21)
+      tests: PaymentsProcessingServiceTest#capturePaymentFailedTest, PlaceOrderFlowCancelledIntegrationTest#captureFailed
 
 ## S6 orderCancelled (fulfillment failed: void)
 path: FulfillmentFailed > voidPayment[voided | void-failed] > PaymentVoided | PaymentVoidFailed > releaseStock > ... > end orderCancelled
