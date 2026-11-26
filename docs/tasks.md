@@ -76,7 +76,8 @@ review: [ ]
       test data: data.sql (C-02)
       tests: OrderCreatedConsumerServiceTest
       blocked by: T-07, T-09
-- [ ] T-11 bounded AFK capturePayment captured: load by orderId, from AUTHORIZED call the processor capture, CAPTURED + capturedAt, persist, emit only PaymentCaptured (with customerEmail and providerReference); no-op, no event, when CAPTURED, CAPTURE_FAILED or VOIDED; other states per T-08
+- [x] T-11 bounded AFK capturePayment captured: load by orderId, from AUTHORIZED call the processor capture, CAPTURED + capturedAt, persist, emit only PaymentCaptured (with customerEmail and providerReference); no-op, no event, when CAPTURED, CAPTURE_FAILED or VOIDED; other states per T-08
+      done: claude-sonnet sonnet
       model: ../arcadia-editions-architecture/business-flows/place-order-flow.zfl:196-199, ../payments-processing-api/domain-model.zdl:180-183, ../payments-processing-api/domain-model.zdl:135-138, ../payments-processing-api/domain-model.zdl:247-256
       test data: data.sql (C-12, C-20 from AUTHORIZED, C-01, C-22, C-21, C-04 redelivery)
       tests: PaymentsProcessingServiceTest#capturePaymentTest
