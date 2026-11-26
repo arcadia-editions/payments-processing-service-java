@@ -184,7 +184,7 @@ review: [x] claude-opus PASS (reports/review-S4.md; every worker implemented par
 ## S5 orderCancelled (capture failed: void)
 path: FulfillmentScheduled > capturePayment[PaymentCaptureFailed] > voidPayment[voided | void-failed]
       > PaymentVoided | PaymentVoidFailed > releaseStock > ... > end orderCancelled
-review: [ ]
+review: [x] claude-opus PASS round 2 (reports/review-S5.md -> T-34, reports/review-S5-round2.md)
 
 - [x] T-23 bounded AFK capturePayment capture failed: the processor refuses the capture, CAPTURE_FAILED + failureReason, persist, emit only PaymentCaptureFailed (reason, failedAt)
       done: claude-sonnet sonnet
