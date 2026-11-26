@@ -470,7 +470,96 @@ class PaymentsProcessingServiceTest {
     }
 
     @Test
-    void voidPaymentTest() { // TODO: implement this test
+    void voidPaymentTest() { // C-21 from CAPTURE_FAILED, C-02 from AUTHORIZED
+        for (var orderId : List.of("ORD-021", "ORD-002")) {
+            context.reloadTestData();
+            var producer = context.getEventsProducerInMemoryContext().paymentsProcessingEventsProducer();
+            var before = paymentRepository.findByOrderId(orderId).orElseThrow();
+            var eventsBefore = producer.getOnPaymentVoidedCapturedMessages().size();
+
+            var result = paymentsProcessingService.voidPayment(
+                    new VoidPaymentInput().setOrderId(orderId).setReason("fulfillment_failed"));
+
+            var saved = paymentRepository.findByOrderId(orderId).orElseThrow();
+            assertEquals(before.getId(), result.orElseThrow().getId());
+            assertEquals(PaymentStatus.VOIDED, saved.getStatus());
+            assertEquals(TestClock.NOW, saved.getVoidedAt());
+            assertNull(saved.getVoidFailedAt());
+            assertEquals("fulfillment_failed", saved.getFailureReason());
+            assertTrue(producer.getOnPaymentVoidFailedCapturedMessages().isEmpty());
+            assertEquals(
+                    eventsBefore + 1,
+                    producer.getOnPaymentVoidedCapturedMessages().size());
+            assertEquals(
+                    eventsBefore + 1,
+                    producer.getCapturedMessages().values().stream()
+                            .mapToInt(List::size)
+                            .sum());
+            var event = (com.arcadiaeditions.payments.processing.events.avro.PaymentVoided)
+                    producer.getOnPaymentVoidedCapturedMessages()
+                            .get(eventsBefore)
+                            .getPayload();
+            assertEquals(orderId, event.getOrderId().toString());
+            assertEquals(
+                    before.getProviderReference(), event.getProviderReference().toString());
+            assertEquals("fulfillment_failed", event.getReason().toString());
+            assertEquals(TestClock.NOW.toString(), event.getVoidedAt().toString());
+        }
+    }
+
+    @Test
+    void voidPaymentRefusedTest() { // C-02 with pm_void_fail: AUTHORIZED -> VOID_FAILED
+        var producer = context.getEventsProducerInMemoryContext().paymentsProcessingEventsProducer();
+        var before = paymentRepository.findByOrderId("ORD-002").orElseThrow();
+        before.setPaymentMethodId("pm_void_fail");
+        paymentRepository.save(before);
+
+        paymentsProcessingService.voidPayment(
+                new VoidPaymentInput().setOrderId("ORD-002").setReason("order_cancelled"));
+
+        var saved = paymentRepository.findByOrderId("ORD-002").orElseThrow();
+        assertEquals(PaymentStatus.VOID_FAILED, saved.getStatus());
+        assertEquals(TestClock.NOW, saved.getVoidFailedAt());
+        assertNull(saved.getVoidedAt());
+        assertEquals("order_cancelled", saved.getFailureReason());
+        assertTrue(producer.getOnPaymentVoidedCapturedMessages().isEmpty());
+        assertEquals(1, producer.getOnPaymentVoidFailedCapturedMessages().size());
+        assertEquals(
+                1,
+                producer.getCapturedMessages().values().stream()
+                        .mapToInt(List::size)
+                        .sum());
+        var event = (com.arcadiaeditions.payments.processing.events.avro.PaymentVoidFailed)
+                producer.getOnPaymentVoidFailedCapturedMessages().get(0).getPayload();
+        assertEquals("ORD-002", event.getOrderId().toString());
+        assertEquals("order_cancelled", event.getReason().toString());
+        assertEquals(TestClock.NOW.toString(), event.getFailedAt().toString());
+    }
+
+    @Test
+    void voidPaymentNoOpTest() { // C-15 AUTHORIZATION_REQUESTED, C-09 VOIDED, C-10 VOID_FAILED, C-11 none
+        var producer = context.getEventsProducerInMemoryContext().paymentsProcessingEventsProducer();
+        var expected = new java.util.LinkedHashMap<String, java.util.Optional<PaymentStatus>>();
+        expected.put("ORD-015", java.util.Optional.of(PaymentStatus.AUTHORIZATION_REQUESTED));
+        expected.put("ORD-009", java.util.Optional.of(PaymentStatus.VOIDED));
+        expected.put("ORD-010", java.util.Optional.of(PaymentStatus.VOID_FAILED));
+        expected.put("ORD-011", java.util.Optional.empty());
+        for (var entry : expected.entrySet()) {
+            var orderId = entry.getKey();
+            var voidedAt =
+                    paymentRepository.findByOrderId(orderId).map(Payment::getVoidedAt); // copied, not a reference
+            var voidFailedAt = paymentRepository.findByOrderId(orderId).map(Payment::getVoidFailedAt);
+            var result = paymentsProcessingService.voidPayment(
+                    new VoidPaymentInput().setOrderId(orderId).setReason("fulfillment_failed"));
+            assertEquals(entry.getValue(), result.map(Payment::getStatus));
+            var after = paymentRepository.findByOrderId(orderId);
+            assertEquals(entry.getValue(), after.map(Payment::getStatus));
+            assertEquals(voidedAt, after.map(Payment::getVoidedAt));
+            assertEquals(voidFailedAt, after.map(Payment::getVoidFailedAt));
+            assertTrue(after.map(p -> !"fulfillment_failed".equals(p.getFailureReason()))
+                    .orElse(true));
+        }
+        assertTrue(producer.getCapturedMessages().values().stream().allMatch(List::isEmpty));
     }
 
     @Test

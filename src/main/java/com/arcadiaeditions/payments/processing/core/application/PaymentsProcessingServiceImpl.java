@@ -242,24 +242,30 @@ public class PaymentsProcessingServiceImpl implements PaymentsProcessingService 
 
         log.debug("Request voidPayment: {}", input);
 
-        // TODO CUSTOM_REQUIRED: load the Payment this transition applies to, e.g. by a correlation key in the input
-        Optional<Payment> foundPayment = Optional.empty();
-        var payment = foundPayment
-                .map(existingPayment -> {
-                    PaymentTransitions.ensureCanVoidPayment(existingPayment);
-                    paymentsProcessingServiceMapper.update(existingPayment, input);
-                    // TODO CUSTOM_REQUIRED: call existingPayment.setStatus(...) with one of VOIDED, VOID_FAILED
-                    return existingPayment;
-                })
-                .map(paymentRepository::save);
-        if (payment.isPresent()) {
-            // emit events
-            var paymentVoided = eventsMapper.asPaymentVoided(payment.get());
-            eventsProducer.onPaymentVoided(paymentVoided);
-            var paymentVoidFailed = eventsMapper.asPaymentVoidFailed(payment.get());
-            eventsProducer.onPaymentVoidFailed(paymentVoidFailed);
+        var found = paymentRepository.findByOrderId(input.getOrderId());
+        if (found.isEmpty()
+                || (found.get().getStatus() != PaymentStatus.AUTHORIZED
+                        && found.get().getStatus() != PaymentStatus.CAPTURE_FAILED)) {
+            log.debug("voidPayment nothing to void for orderId {}: no-op", input.getOrderId());
+            return found;
         }
-        return payment;
+        var payment = found.get();
+        PaymentTransitions.ensureCanVoidPayment(payment);
+        var result = paymentProcessor.voidAuthorization(new PaymentProcessor.VoidRequest(
+                payment.getOrderId(), payment.getPaymentMethodId(), payment.getProviderReference(), input.getReason()));
+        payment.setFailureReason(input.getReason()); // ADR 0002: failureReason keeps VoidPaymentInput.reason
+        if (!result.voided()) {
+            payment.setStatus(PaymentStatus.VOID_FAILED);
+            payment.setVoidFailedAt(Instant.now(clock));
+            payment = paymentRepository.save(payment);
+            eventsProducer.onPaymentVoidFailed(eventsMapper.asPaymentVoidFailed(payment));
+            return Optional.of(payment);
+        }
+        payment.setStatus(PaymentStatus.VOIDED);
+        payment.setVoidedAt(Instant.now(clock));
+        payment = paymentRepository.save(payment);
+        eventsProducer.onPaymentVoided(eventsMapper.asPaymentVoided(payment));
+        return Optional.of(payment);
     }
 
     @Transactional(readOnly = true)
