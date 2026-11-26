@@ -192,7 +192,8 @@ review: [ ]
       test data: data.sql (C-12, stub-driven); result shape C-21
       tests: PaymentsProcessingServiceTest#capturePaymentFailedTest
       blocked by: T-11
-- [/] T-24 bounded AFK voidPayment: no-op, no event, when there is no Payment or it is not AUTHORIZED or CAPTURE_FAILED; call the processor void; VOIDED + voidedAt, emit PaymentVoided; refused: VOID_FAILED + voidFailedAt, emit PaymentVoidFailed (failedAt = voidFailedAt); reason per T-05
+- [x] T-24 bounded AFK voidPayment: no-op, no event, when there is no Payment or it is not AUTHORIZED or CAPTURE_FAILED; call the processor void; VOIDED + voidedAt, emit PaymentVoided; refused: VOID_FAILED + voidFailedAt, emit PaymentVoidFailed (failedAt = voidFailedAt); reason per T-05
+      done: claude-sonnet sonnet
       model: ../arcadia-editions-architecture/business-flows/place-order-flow.zfl:236-252, ../payments-processing-api/domain-model.zdl:186-194, ../payments-processing-api/domain-model.zdl:141-144, ../payments-processing-api/domain-model.zdl:266-283
       test data: data.sql (C-21 from CAPTURE_FAILED, C-02 from AUTHORIZED, C-15 / C-09 / C-10 / C-11 no-op)
       tests: PaymentsProcessingServiceTest#voidPaymentTest
