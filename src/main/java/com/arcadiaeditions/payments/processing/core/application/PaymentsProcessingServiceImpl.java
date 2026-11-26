@@ -94,7 +94,14 @@ public class PaymentsProcessingServiceImpl implements PaymentsProcessingService 
                 payment = paymentRepository.save(payment);
                 eventsProducer.onPaymentAuthorized(eventsMapper.asPaymentAuthorized(payment));
             }
-            // TODO T-16 (DECLINED -> PaymentDeclined), T-18 (FAILED -> PaymentFailed)
+            case DECLINED -> {
+                payment.setStatus(PaymentStatus.DECLINED);
+                payment.setDeclinedAt(Instant.now(clock));
+                payment.setFailureReason(result.reason());
+                payment = paymentRepository.save(payment);
+                eventsProducer.onPaymentDeclined(eventsMapper.asPaymentDeclined(payment));
+            }
+            // TODO T-18 (FAILED -> PaymentFailed)
             default ->
                 throw new UnsupportedOperationException(
                         "authorizePayment outcome not implemented yet: " + result.outcome());
