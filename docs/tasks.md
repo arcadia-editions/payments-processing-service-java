@@ -85,7 +85,8 @@ review: [ ]
       test data: data.sql (C-12)
       tests: FulfillmentScheduledConsumerServiceTest
       blocked by: T-07, T-11
-- [ ] T-31 bounded AFK Kafka Avro wiring for the SpringKafka runtime: value serializer / deserializer for Avro (Confluent KafkaAvroSerializer / KafkaAvroDeserializer, simplest), schema.registry.url, specific.avro.reader true, listener ack-mode manual (the generated listeners take an Acknowledgment), the serializer dependency in pom.xml; ADR 0003 says these live in spring.kafka.*
+- [x] T-31 bounded AFK Kafka Avro wiring for the SpringKafka runtime: value serializer / deserializer for Avro (Confluent KafkaAvroSerializer / KafkaAvroDeserializer, simplest), schema.registry.url, specific.avro.reader true, listener ack-mode manual (the generated listeners take an Acknowledgment), the serializer dependency in pom.xml; ADR 0003 says these live in spring.kafka.*
+      done: claude-sonnet sonnet
       fixes: .zenwave/handoff/place-order-flow/reports/review-S0.md (model axis, T-07)
       model: ../payments-processing-api/domain-model.zdl:201-283
       tests: a Kafka round-trip IT (produce PaymentAuthorized, consume it back as Avro), e.g. KafkaAvroWiringIntegrationTest
