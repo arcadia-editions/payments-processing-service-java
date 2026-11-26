@@ -206,12 +206,20 @@ public class PaymentsProcessingServiceImpl implements PaymentsProcessingService 
         return payment;
     }
 
+    @Transactional(readOnly = true)
     public GetPaymentStatusResult getPaymentStatus(GetPaymentStatusInput input) {
 
         log.debug("Request getPaymentStatus: {}", input);
 
-        var payment = paymentsProcessingServiceMapper.update(new Payment(), input);
-        // TODO: implement this method
-        return paymentsProcessingServiceMapper.asGetPaymentStatusResult(payment);
+        return paymentRepository
+                .findByOrderId(input.getOrderId())
+                .map(payment -> new GetPaymentStatusResult()
+                        .setOutcome(GetPaymentStatusOutcome.STARTED)
+                        .setStarted(new PaymentStartedResult()
+                                .setOrderId(payment.getOrderId())
+                                .setStatus(payment.getStatus())))
+                .orElseGet(() -> new GetPaymentStatusResult()
+                        .setOutcome(GetPaymentStatusOutcome.NO_PAYMENT)
+                        .setNoPayment(new NoPaymentResult().setOrderId(input.getOrderId())));
     }
 }

@@ -210,7 +210,22 @@ class PaymentsProcessingServiceTest {
     }
 
     @Test
-    void getPaymentStatusTest() { // TODO: implement this test
+    void getPaymentStatusTest() {
+        var none = paymentsProcessingService.getPaymentStatus(new GetPaymentStatusInput().setOrderId("ORD-011"));
+        assertEquals(GetPaymentStatusOutcome.NO_PAYMENT, none.getOutcome());
+        assertEquals("ORD-011", none.getNoPayment().getOrderId());
+        assertNull(none.getStarted());
+
+        var captured = paymentsProcessingService.getPaymentStatus(new GetPaymentStatusInput().setOrderId("ORD-001"));
+        assertEquals(GetPaymentStatusOutcome.STARTED, captured.getOutcome());
+        assertEquals("ORD-001", captured.getStarted().getOrderId());
+        assertEquals(PaymentStatus.CAPTURED, captured.getStarted().getStatus());
+        assertNull(captured.getNoPayment());
+
+        var inFlight = paymentsProcessingService.getPaymentStatus(new GetPaymentStatusInput().setOrderId("ORD-015"));
+        assertEquals(GetPaymentStatusOutcome.STARTED, inFlight.getOutcome());
+        assertEquals(
+                PaymentStatus.AUTHORIZATION_REQUESTED, inFlight.getStarted().getStatus());
     }
 
     @Test
