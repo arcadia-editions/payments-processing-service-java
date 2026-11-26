@@ -11,6 +11,7 @@ import com.arcadiaeditions.payments.processing.core.inbound.dtos.*;
 import com.arcadiaeditions.payments.processing.core.outbound.jpa.*;
 import com.arcadiaeditions.payments.processing.core.outbound.processor.PaymentProcessor;
 import com.arcadiaeditions.payments.processing.events.avro.PaymentAuthorized;
+import com.arcadiaeditions.payments.processing.events.avro.PaymentCaptureFailed;
 import com.arcadiaeditions.payments.processing.events.avro.PaymentCaptured;
 import com.arcadiaeditions.payments.processing.events.avro.PaymentDeclined;
 import com.arcadiaeditions.payments.processing.events.avro.PaymentFailed;
@@ -408,6 +409,35 @@ class PaymentsProcessingServiceTest {
         assertEquals(before.getCustomerEmail(), event.getCustomerEmail().toString());
         assertEquals("STANDIN-ORD-012", event.getProviderReference().toString());
         assertEquals(TestClock.NOW.toString(), event.getCapturedAt().toString());
+    }
+
+    @Test
+    void capturePaymentFailedTest() { // C-12 with a refusing processor: AUTHORIZED -> CAPTURE_FAILED
+        var producer = context.getEventsProducerInMemoryContext().paymentsProcessingEventsProducer();
+        var before = paymentRepository.findByOrderId("ORD-012").orElseThrow();
+        before.setProviderReference("STANDIN-CAPFAIL-ORD-012");
+        paymentRepository.save(before);
+
+        var payment = paymentsProcessingService.capturePayment(new CapturePaymentInput().setOrderId("ORD-012"));
+
+        var saved = paymentRepository.findByOrderId("ORD-012").orElseThrow();
+        assertEquals(before.getId(), payment.getId());
+        assertEquals(PaymentStatus.CAPTURE_FAILED, saved.getStatus());
+        assertEquals("capture_rejected", saved.getFailureReason());
+        assertEquals(TestClock.NOW, saved.getFailedAt());
+        assertNull(saved.getCapturedAt());
+        assertTrue(producer.getOnPaymentCapturedCapturedMessages().isEmpty());
+        assertEquals(1, producer.getOnPaymentCaptureFailedCapturedMessages().size());
+        assertEquals(
+                1,
+                producer.getCapturedMessages().values().stream()
+                        .mapToInt(List::size)
+                        .sum());
+        var event = (PaymentCaptureFailed)
+                producer.getOnPaymentCaptureFailedCapturedMessages().get(0).getPayload();
+        assertEquals("ORD-012", event.getOrderId().toString());
+        assertEquals("capture_rejected", event.getReason().toString());
+        assertEquals(TestClock.NOW.toString(), event.getFailedAt().toString());
     }
 
     @Test
