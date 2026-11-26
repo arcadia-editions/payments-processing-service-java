@@ -15,8 +15,8 @@ Test data chains C-01..C-22: header of src/test/resources/data.sql (assumptions 
 from the entities and the modulith data.sql, then checked against the exported DDL.
 Approved models: payments-processing-api service-all 0.2.0 (tag release/service-all/v0.2.0); ZFL at
 arcadia-editions-architecture tag baseline/place-order-flow-<n>.
-Open proposal: P-01 (asyncapi-client.yml 0.2.0 has no FulfillmentFailed / OrderConfirmationRejected channel) blocks
-T-27..T-30.
+P-01 closed 2026-11-26: service-all 0.2.1 consumes FulfillmentFailed and OrderConfirmationRejected (T-27..T-30 unblocked,
+next AFK round).
 Baseline failures confirmed by mvn verify 2026-11-25 (overlay, full-suite command). Data.sql matches the exported DDL.
 AsyncAPI templates: pom.xml uses SpringKafka (8adfd42), whose consumers need app.kafka.topics.<channel>.topic
 properties: until T-07 adds them no Spring context starts, so every repository and API IT fails at context load.
@@ -221,36 +221,32 @@ review: [x] claude-opus PASS round 2 (reports/review-S5.md -> T-34, reports/revi
 path: FulfillmentFailed > voidPayment[voided | void-failed] > PaymentVoided | PaymentVoidFailed > releaseStock > ... > end orderCancelled
 review: [ ]
 
-- [!] T-27 mechanical AFK FulfillmentFailed consumer: map orderId and reason to VoidPaymentInput and call voidPayment (no consumer interface is generated: fulfillment-failed-event-v1 is missing from asyncapi-client.yml 0.2.0)
+- [ ] T-27 mechanical AFK FulfillmentFailed consumer: map orderId and reason to VoidPaymentInput and call voidPayment (IFulfillmentFailedEventV1ConsumerService, service-all 0.2.1)
       model: ../payments-processing-api/domain-model.zdl:191, ../arcadia-editions-architecture/business-flows/place-order-flow.zfl:246
       test data: data.sql (C-02 shape AUTHORIZED; C-04 result)
       tests: FulfillmentFailedConsumerServiceTest
       blocked by: T-24
-      blocked: P-01 (decided A, next loop)
-- [!] T-28 bounded AFK Flow test orderCancelled, fulfillment failed (payments side): a FulfillmentFailed message voids an AUTHORIZED payment and publishes PaymentVoided
+- [ ] T-28 bounded AFK Flow test orderCancelled, fulfillment failed (payments side): a FulfillmentFailed message voids an AUTHORIZED payment and publishes PaymentVoided
       model: ../arcadia-editions-architecture/business-flows/place-order-flow.zfl:236-252, ../arcadia-editions-architecture/business-flows/place-order-flow.zfl:340-344
       test data: data.sql (C-04)
       tests: PlaceOrderFlowCancelledIntegrationTest#fulfillmentFailed
       blocked by: T-27
-      blocked: P-01 (decided A, next loop)
 
 ## S7 late authorization rejected
 path: ... > PaymentAuthorized (after expiry) > confirmOrder[stock-not-held | order-cancelled] > OrderConfirmationRejected
       > voidPayment > PaymentVoided > releaseStock (no-op) > end orderCancelled
 review: [ ]
 
-- [!] T-29 mechanical AFK OrderConfirmationRejected consumer: map orderId and reason to VoidPaymentInput and call voidPayment (no consumer interface is generated: order-confirmation-rejected-event-v1 is missing from asyncapi-client.yml 0.2.0)
+- [ ] T-29 mechanical AFK OrderConfirmationRejected consumer: map orderId and reason to VoidPaymentInput and call voidPayment (IOrderConfirmationRejectedEventV1ConsumerService, service-all 0.2.1)
       model: ../payments-processing-api/domain-model.zdl:190, ../arcadia-editions-architecture/business-flows/place-order-flow.zfl:236-246
       test data: data.sql (C-05, C-06)
       tests: OrderConfirmationRejectedConsumerServiceTest
       blocked by: T-24
-      blocked: P-01 (decided A, next loop)
-- [!] T-30 bounded AFK Flow test late authorization (payments side): OrderConfirmationRejected for ORD-005 (STOCK_NOT_HELD) and ORD-006 (ORDER_CANCELLED) voids the late AUTHORIZED payment and publishes PaymentVoided
+- [ ] T-30 bounded AFK Flow test late authorization (payments side): OrderConfirmationRejected for ORD-005 (STOCK_NOT_HELD) and ORD-006 (ORDER_CANCELLED) voids the late AUTHORIZED payment and publishes PaymentVoided
       model: ../arcadia-editions-architecture/business-flows/place-order-flow.zfl:236-252, ../arcadia-editions-architecture/business-flows/place-order-flow.zfl:340-344
       test data: data.sql (C-05, C-06)
       tests: PlaceOrderFlowLateAuthorizationIntegrationTest
       blocked by: T-29
-      blocked: P-01 (decided A, next loop)
 
 <!--
 Next loop (decided 2026-11-26 by the person, not in this board)

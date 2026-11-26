@@ -22,7 +22,7 @@
 		<openApiModelPackage>${basePackage}.adapters.web.dtos</openApiModelPackage>
 
 		<!-- models and contracts: released service-all package (GitHub Packages), never refs/heads/main -->
-		<payments-processing-api.version>0.2.0</payments-processing-api.version>
+		<payments-processing-api.version>0.2.1</payments-processing-api.version>
 		<openapi.inputSpec>com/arcadiaeditions/payments/payment-processing/payments-processing/openapi.yml</openapi.inputSpec>
 		<asyncapi.inputSpec>classpath:com/arcadiaeditions/payments/payment-processing/payments-processing/asyncapi.yml</asyncapi.inputSpec>
 		<asyncApiModelPackage>${basePackage}.asyncapi.provider.dtos</asyncApiModelPackage>

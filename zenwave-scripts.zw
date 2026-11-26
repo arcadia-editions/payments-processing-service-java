@@ -1,4 +1,4 @@
-@import("com.arcadiaeditions.payments.payment-processing.payments-processing:service-all:0.2.0")
+@import("com.arcadiaeditions.payments.payment-processing.payments-processing:service-all:0.2.1")
 // ZenWave Scripts File (.zw): plugins and configuration for ZenWave SDK code generation.
 //
 // The models and API contracts are owned by the payments-processing-api repository and read from
