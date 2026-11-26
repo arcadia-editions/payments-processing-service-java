@@ -36,7 +36,8 @@ review: [ ]
       done: grok grok-4.7
       tests: PaymentsProcessingServiceTest
       blocked by: T-01
-- [ ] T-04 mechanical AFK PaymentRepository.findByOrderId (JPA and in-memory twin): every command correlates by orderId (unique)
+- [x] T-04 mechanical AFK PaymentRepository.findByOrderId (JPA and in-memory twin): every command correlates by orderId (unique)
+      done: grok grok-4.7
       model: ../payments-processing-api/domain-model.zdl:56-57, ../payments-processing-api/domain-model.zdl:135-144
       test data: data.sql (C-01, C-11 none)
       tests: PaymentRepositoryIntegrationTest
