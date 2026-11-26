@@ -144,7 +144,7 @@ review: [x] claude-opus PASS (reports/review-S3.md; SHOULD FIX -> T-33)
 path: OrderCreated > authorizePayment[failed] > PaymentFailed > retryPayment[retried] > PaymentRetried
       > reauthorizePayment[authorized | declined | failed] > ... > retryPayment[retry-exhausted]
       > PaymentRetryExhausted > releaseStock > ... > end orderCancelled
-review: [ ]
+review: [x] claude-opus PASS (reports/review-S4.md; every worker implemented part of S4)
 
 - [x] T-18 advanced AFK authorizePayment failed: a processor error or a call over 30 seconds becomes FAILED + failedAt + failureReason, persist, emit only PaymentFailed with attemptCount
       done: claude-opus opus
@@ -192,7 +192,7 @@ review: [ ]
       test data: data.sql (C-12, stub-driven); result shape C-21
       tests: PaymentsProcessingServiceTest#capturePaymentFailedTest
       blocked by: T-11
-- [ ] T-24 bounded AFK voidPayment: no-op, no event, when there is no Payment or it is not AUTHORIZED or CAPTURE_FAILED; call the processor void; VOIDED + voidedAt, emit PaymentVoided; refused: VOID_FAILED + voidFailedAt, emit PaymentVoidFailed (failedAt = voidFailedAt); reason per T-05
+- [/] T-24 bounded AFK voidPayment: no-op, no event, when there is no Payment or it is not AUTHORIZED or CAPTURE_FAILED; call the processor void; VOIDED + voidedAt, emit PaymentVoided; refused: VOID_FAILED + voidFailedAt, emit PaymentVoidFailed (failedAt = voidFailedAt); reason per T-05
       model: ../arcadia-editions-architecture/business-flows/place-order-flow.zfl:236-252, ../payments-processing-api/domain-model.zdl:186-194, ../payments-processing-api/domain-model.zdl:141-144, ../payments-processing-api/domain-model.zdl:266-283
       test data: data.sql (C-21 from CAPTURE_FAILED, C-02 from AUTHORIZED, C-15 / C-09 / C-10 / C-11 no-op)
       tests: PaymentsProcessingServiceTest#voidPaymentTest
