@@ -198,7 +198,8 @@ review: [ ]
       test data: data.sql (C-21 from CAPTURE_FAILED, C-02 from AUTHORIZED, C-15 / C-09 / C-10 / C-11 no-op)
       tests: PaymentsProcessingServiceTest#voidPaymentTest
       blocked by: T-03, T-04, T-05, T-06
-- [ ] T-25 mechanical AFK PaymentCaptureFailedConsumerService: map both messages of the own channel (VoidPaymentInput / PaymentCaptureFailed: orderId, reason) to VoidPaymentInput and call voidPayment
+- [x] T-25 mechanical AFK PaymentCaptureFailedConsumerService: map both messages of the own channel (VoidPaymentInput / PaymentCaptureFailed: orderId, reason) to VoidPaymentInput and call voidPayment
+      done: grok grok-4.7
       model: ../payments-processing-api/domain-model.zdl:192, ../payments-processing-api/domain-model.zdl:141-144
       test data: data.sql (C-21)
       tests: PaymentCaptureFailedConsumerServiceTest
