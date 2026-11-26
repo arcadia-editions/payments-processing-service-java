@@ -70,7 +70,8 @@ review: [ ]
       test data: data.sql (C-02 redelivery; a new orderId such as ORD-099 for creation)
       tests: PaymentsProcessingServiceTest#authorizePaymentTest
       blocked by: T-01, T-03, T-04, T-06
-- [ ] T-10 mechanical AFK OrderCreatedConsumerService: map OrderCreated (orderId, customerId, customerEmail, paymentMethodId, amount, currency) to AuthorizePaymentInput and call authorizePayment
+- [x] T-10 mechanical AFK OrderCreatedConsumerService: map OrderCreated (orderId, customerId, customerEmail, paymentMethodId, amount, currency) to AuthorizePaymentInput and call authorizePayment
+      done: grok grok-4.7
       model: ../payments-processing-api/domain-model.zdl:89-96, ../payments-processing-api/domain-model.zdl:155
       test data: data.sql (C-02)
       tests: OrderCreatedConsumerServiceTest
