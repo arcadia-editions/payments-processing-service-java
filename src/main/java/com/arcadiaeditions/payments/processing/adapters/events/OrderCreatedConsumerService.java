@@ -7,12 +7,14 @@ import org.springframework.stereotype.Component;
 
 /**
  * Inbound adapter: order-created-event-v1 -> PaymentsProcessingService.authorizePayment.
- * Stub so the Spring context boots; the generator does not emit adapters for AsyncAPIGenerator interfaces.
+ * The generator does not emit adapters for AsyncAPIGenerator interfaces.
  */
 @Component
 public class OrderCreatedConsumerService implements IOrderCreatedEventV1ConsumerService {
 
     private final PaymentsProcessingService paymentsProcessingService;
+
+    private final OrderCreatedConsumerMapper mapper = OrderCreatedConsumerMapper.INSTANCE;
 
     public OrderCreatedConsumerService(PaymentsProcessingService paymentsProcessingService) {
         this.paymentsProcessingService = paymentsProcessingService;
@@ -20,8 +22,6 @@ public class OrderCreatedConsumerService implements IOrderCreatedEventV1Consumer
 
     @Override
     public void onOrderCreatedEventV1(OrderCreated payload, OrderCreatedHeaders headers) {
-        // TODO CUSTOM_REQUIRED: map payload to AuthorizePaymentInput and call
-        // paymentsProcessingService.authorizePayment
-        throw new UnsupportedOperationException("Not implemented");
+        paymentsProcessingService.authorizePayment(mapper.asAuthorizePaymentInput(payload));
     }
 }
