@@ -99,7 +99,8 @@ review: [x] claude-opus PASS (reports/review-S1.md; every worker implemented par
       test data: data.sql (C-01, C-12)
       tests: PlaceOrderFlowCompletedTest
       blocked by: T-10, T-12, T-31
-- [ ] T-32 mechanical AFK Rename the flow test PlaceOrderFlowCompletedTest to PlaceOrderFlowCompletedIntegrationTest (Spring + Docker tests run with Failsafe: overlay project rules), so plain mvn test needs no Docker and the suite starts compose once per JVM
+- [x] T-32 mechanical AFK Rename the flow test PlaceOrderFlowCompletedTest to PlaceOrderFlowCompletedIntegrationTest (Spring + Docker tests run with Failsafe: overlay project rules), so plain mvn test needs no Docker and the suite starts compose once per JVM
+      done: grok grok-4.7
       fixes: .zenwave/handoff/place-order-flow/reports/review-S1.md (standards axis)
       tests: PlaceOrderFlowCompletedIntegrationTest
 
