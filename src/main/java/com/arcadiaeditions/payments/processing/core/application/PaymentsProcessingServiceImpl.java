@@ -205,6 +205,8 @@ public class PaymentsProcessingServiceImpl implements PaymentsProcessingService 
         return Optional.of(payment);
     }
 
+    /** NOT_SUPPORTED: each save commits before its event is sent, so voidPayment never reads the row AUTHORIZED. */
+    @Transactional(propagation = Propagation.NOT_SUPPORTED)
     public Payment capturePayment(CapturePaymentInput input) {
 
         log.debug("Request capturePayment: {}", input);
@@ -225,10 +227,9 @@ public class PaymentsProcessingServiceImpl implements PaymentsProcessingService 
                 payment.getCurrency()));
         if (!result.captured()) {
             payment.setStatus(PaymentStatus.CAPTURE_FAILED);
-            payment.setFailedAt(Instant.now(clock));
-            payment.setFailureReason(result.reason());
+            payment.setFailureReason(result.reason()); // failedAt stays null (C-21)
             payment = paymentRepository.save(payment);
-            eventsProducer.onPaymentCaptureFailed(eventsMapper.asPaymentCaptureFailed(payment));
+            eventsProducer.onPaymentCaptureFailed(eventsMapper.asPaymentCaptureFailed(payment, Instant.now(clock)));
             return payment;
         }
         payment.setStatus(PaymentStatus.CAPTURED);

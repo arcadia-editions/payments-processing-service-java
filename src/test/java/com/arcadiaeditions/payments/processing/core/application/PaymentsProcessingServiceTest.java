@@ -424,7 +424,7 @@ class PaymentsProcessingServiceTest {
         assertEquals(before.getId(), payment.getId());
         assertEquals(PaymentStatus.CAPTURE_FAILED, saved.getStatus());
         assertEquals("capture_rejected", saved.getFailureReason());
-        assertEquals(TestClock.NOW, saved.getFailedAt());
+        assertNull(saved.getFailedAt());
         assertNull(saved.getCapturedAt());
         assertTrue(producer.getOnPaymentCapturedCapturedMessages().isEmpty());
         assertEquals(1, producer.getOnPaymentCaptureFailedCapturedMessages().size());
