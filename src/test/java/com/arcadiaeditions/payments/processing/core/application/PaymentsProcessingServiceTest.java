@@ -9,8 +9,14 @@ import com.arcadiaeditions.payments.processing.core.domain.*;
 import com.arcadiaeditions.payments.processing.core.inbound.*;
 import com.arcadiaeditions.payments.processing.core.inbound.dtos.*;
 import com.arcadiaeditions.payments.processing.core.outbound.jpa.*;
+import com.arcadiaeditions.payments.processing.core.outbound.processor.PaymentProcessor;
+import com.arcadiaeditions.payments.processing.events.avro.PaymentAuthorized;
 import com.arcadiaeditions.payments.processing.infrastructure.jpa.inmemory.*;
+import com.arcadiaeditions.payments.processing.infrastructure.processor.StandInPaymentProcessor;
+import java.math.BigDecimal;
 import java.time.*;
+import java.util.ArrayList;
+import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
@@ -33,8 +39,106 @@ class PaymentsProcessingServiceTest {
         context.reloadTestData();
     }
 
+    AuthorizePaymentInput newAuthorizePaymentInput(String orderId) {
+        return new AuthorizePaymentInput()
+                .setOrderId(orderId)
+                .setCustomerId("CUST-099")
+                .setCustomerEmail("customer099@example.com")
+                .setAmount(new BigDecimal("29.99"))
+                .setCurrency("EUR")
+                .setPaymentMethodId("PM-099");
+    }
+
     @Test
-    void authorizePaymentTest() { // TODO: implement this test
+    void authorizePaymentTest() {
+        var producer = context.getEventsProducerInMemoryContext().paymentsProcessingEventsProducer();
+        var payment = paymentsProcessingService.authorizePayment(newAuthorizePaymentInput("ORD-099"));
+
+        var saved = paymentRepository.findByOrderId("ORD-099").orElseThrow();
+        assertNotNull(saved.getId());
+        assertEquals(PaymentStatus.AUTHORIZED, saved.getStatus());
+        assertEquals(1, saved.getAttemptCount());
+        assertEquals("STANDIN-ORD-099", saved.getProviderReference());
+        assertEquals(TestClock.NOW, saved.getAuthorizedAt());
+        assertEquals("CUST-099", saved.getCustomerId());
+        assertEquals("PM-099", saved.getPaymentMethodId());
+        assertEquals("customer099@example.com", saved.getCustomerEmail());
+        assertEquals(0, new BigDecimal("29.99").compareTo(saved.getAmount()));
+        assertEquals("EUR", saved.getCurrency());
+        assertNull(saved.getDeclinedAt());
+        assertNull(saved.getFailedAt());
+        assertNull(saved.getFailureReason());
+        assertEquals(saved.getId(), payment.getId());
+
+        assertEquals(1, producer.getOnPaymentAuthorizedCapturedMessages().size());
+        assertEquals(0, producer.getOnPaymentDeclinedCapturedMessages().size());
+        assertEquals(0, producer.getOnPaymentFailedCapturedMessages().size());
+        assertEquals(
+                1,
+                producer.getCapturedMessages().values().stream()
+                        .mapToInt(List::size)
+                        .sum());
+        var event = (PaymentAuthorized)
+                producer.getOnPaymentAuthorizedCapturedMessages().get(0).getPayload();
+        assertEquals("ORD-099", event.getOrderId().toString());
+        assertEquals("CUST-099", event.getCustomerId().toString());
+        assertEquals("STANDIN-ORD-099", event.getProviderReference().toString());
+        assertEquals(TestClock.NOW.toString(), event.getAuthorizedAt().toString());
+    }
+
+    @Test
+    void authorizePaymentSavesAuthorizationRequestedBeforeCallingProcessor() {
+        var seen = new ArrayList<Payment>();
+        var standIn = new StandInPaymentProcessor(Duration.ofMillis(500));
+        PaymentProcessor recording = new PaymentProcessor() {
+            public AuthorizationResult authorize(AuthorizationRequest request) {
+                var p = paymentRepository.findByOrderId(request.orderId()).orElseThrow();
+                seen.add(new Payment().setStatus(p.getStatus()).setAttemptCount(p.getAttemptCount()));
+                assertEquals(1, request.attemptCount());
+                return standIn.authorize(request);
+            }
+
+            public CaptureResult capture(CaptureRequest request) {
+                return standIn.capture(request);
+            }
+
+            public VoidResult voidAuthorization(VoidRequest request) {
+                return standIn.voidAuthorization(request);
+            }
+        };
+        var service = new PaymentsProcessingServiceImpl(
+                paymentRepository,
+                context.getEventsProducerInMemoryContext().paymentsProcessingEventsProducer(),
+                TestClock.FIXED,
+                recording);
+
+        service.authorizePayment(newAuthorizePaymentInput("ORD-099"));
+
+        assertEquals(1, seen.size());
+        assertEquals(PaymentStatus.AUTHORIZATION_REQUESTED, seen.get(0).getStatus());
+        assertEquals(1, seen.get(0).getAttemptCount());
+        assertEquals(
+                PaymentStatus.AUTHORIZED,
+                paymentRepository.findByOrderId("ORD-099").orElseThrow().getStatus());
+    }
+
+    @Test
+    void authorizePaymentRedeliveryIsNoOp() { // C-02: a Payment for ORD-002 exists (AUTHORIZED)
+        var producer = context.getEventsProducerInMemoryContext().paymentsProcessingEventsProducer();
+        var count = paymentRepository.count();
+        var input = newAuthorizePaymentInput("ORD-002").setPaymentMethodId("PM-002");
+
+        var payment = paymentsProcessingService.authorizePayment(input);
+
+        assertEquals(count, paymentRepository.count());
+        var existing = paymentRepository.findByOrderId("ORD-002").orElseThrow();
+        assertEquals(existing.getId(), payment.getId());
+        assertEquals(PaymentStatus.AUTHORIZED, existing.getStatus());
+        assertEquals(1, existing.getAttemptCount());
+        assertEquals("STANDIN-ORD-002", existing.getProviderReference());
+        assertEquals(Instant.parse("2026-10-14T09:50:32Z"), existing.getAuthorizedAt());
+        assertEquals("CUST-002", existing.getCustomerId());
+        assertTrue(producer.getCapturedMessages().values().stream().allMatch(List::isEmpty));
     }
 
     @Test

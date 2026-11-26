@@ -6,6 +6,7 @@ import com.arcadiaeditions.payments.processing.core.domain.*;
 import com.arcadiaeditions.payments.processing.core.inbound.*;
 import com.arcadiaeditions.payments.processing.core.inbound.dtos.*;
 import com.arcadiaeditions.payments.processing.core.outbound.jpa.*;
+import com.arcadiaeditions.payments.processing.core.outbound.processor.PaymentProcessor;
 // import com.arcadiaeditions.payments.processing.events.avro.*;
 import java.math.*;
 import java.time.*;
@@ -13,6 +14,7 @@ import java.util.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
@@ -36,43 +38,67 @@ public class PaymentsProcessingServiceImpl implements PaymentsProcessingService 
     /** authorizedAt, declinedAt, failedAt, retriedAt, exhaustedAt, capturedAt, voidedAt. */
     private final Clock clock;
 
+    private final PaymentProcessor paymentProcessor;
+
     /**
      * Constructor.
      */
     public PaymentsProcessingServiceImpl(
-            PaymentRepository paymentRepository, PaymentsProcessingEventsProducer eventsProducer, Clock clock) {
+            PaymentRepository paymentRepository,
+            PaymentsProcessingEventsProducer eventsProducer,
+            Clock clock,
+            PaymentProcessor paymentProcessor) {
         this.paymentRepository = paymentRepository;
         this.eventsProducer = eventsProducer;
         this.clock = clock;
+        this.paymentProcessor = paymentProcessor;
     }
 
     Clock clock() {
         return clock;
     }
 
+    /**
+     * Creation only. Not transactional: each repository save commits on its own, so AUTHORIZATION_REQUESTED is
+     * visible (getPaymentStatus) while the processor call is in flight.
+     */
+    @Transactional(propagation = Propagation.NOT_SUPPORTED)
     public Payment authorizePayment(AuthorizePaymentInput input) {
 
         log.debug("Request authorizePayment: {}", input);
 
-        // TODO CUSTOM_REQUIRED: load the Payment this transition applies to, e.g. by a correlation key in the input
-        Optional<Payment> foundPayment = Optional.empty();
-        var payment = foundPayment
-                .map(existingPayment -> {
-                    PaymentTransitions.ensureCanAuthorizePayment(existingPayment);
-                    paymentsProcessingServiceMapper.update(existingPayment, input);
-                    // TODO CUSTOM_REQUIRED: call existingPayment.setStatus(...) with one of AUTHORIZED, DECLINED,
-                    // FAILED
-                    return existingPayment;
-                })
-                .map(paymentRepository::save)
-                .orElseThrow();
-        // emit events
-        var paymentAuthorized = eventsMapper.asPaymentAuthorized(payment);
-        eventsProducer.onPaymentAuthorized(paymentAuthorized);
-        var paymentDeclined = eventsMapper.asPaymentDeclined(payment);
-        eventsProducer.onPaymentDeclined(paymentDeclined);
-        var paymentFailed = eventsMapper.asPaymentFailed(payment);
-        eventsProducer.onPaymentFailed(paymentFailed);
+        var existing = paymentRepository.findByOrderId(input.getOrderId());
+        if (existing.isPresent()) {
+            log.debug("authorizePayment redelivery for orderId {}: no-op", input.getOrderId());
+            return existing.get();
+        }
+
+        var payment = paymentsProcessingServiceMapper.update(new Payment(), input);
+        payment.setStatus(PaymentStatus.AUTHORIZATION_REQUESTED);
+        payment.setAttemptCount(1);
+        payment = paymentRepository.save(payment); // commits before calling the processor
+
+        PaymentTransitions.ensureCanAuthorizePayment(payment);
+        var result = paymentProcessor.authorize(new PaymentProcessor.AuthorizationRequest(
+                payment.getOrderId(),
+                payment.getPaymentMethodId(),
+                payment.getAmount(),
+                payment.getCurrency(),
+                payment.getAttemptCount()));
+
+        switch (result.outcome()) {
+            case AUTHORIZED -> {
+                payment.setStatus(PaymentStatus.AUTHORIZED);
+                payment.setProviderReference(result.providerReference());
+                payment.setAuthorizedAt(Instant.now(clock));
+                payment = paymentRepository.save(payment);
+                eventsProducer.onPaymentAuthorized(eventsMapper.asPaymentAuthorized(payment));
+            }
+            // TODO T-16 (DECLINED -> PaymentDeclined), T-18 (FAILED -> PaymentFailed)
+            default ->
+                throw new UnsupportedOperationException(
+                        "authorizePayment outcome not implemented yet: " + result.outcome());
+        }
         return payment;
     }
 
