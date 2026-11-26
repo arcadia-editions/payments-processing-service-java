@@ -40,7 +40,10 @@ services:
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
   schema-registry:
     image: confluentinc/cp-schema-registry:7.5.3
+    # may start before zookeeper/kafka accept connections: retry instead of staying down
+    restart: on-failure
     depends_on:
+      - zookeeper
       - kafka
     ports:
       - '8081:8081'
