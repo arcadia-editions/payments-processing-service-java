@@ -1,8 +1,9 @@
 # PlaceOrderFlow: tasks
 
 flow: ../arcadia-editions-architecture/business-flows/place-order-flow.zfl
-baseline: baseline/place-order-flow-5
-approved: 2026-11-25 by the person (tasks and slices reviewed)
+baseline: baseline/place-order-flow-6
+approved: 2026-11-25 by the person (tasks and slices reviewed); round 2 (S6, S7) 2026-11-26 by claude on behalf of the person
+gate: 2026-11-26 round 2, items 4, 5, 13 reviewed by claude on behalf of the person (docs/gate/place-order-flow-round-2.md)
 branch: afk/place-order-flow
 
 <!--
@@ -13,10 +14,17 @@ Model paths: ZFL = ../arcadia-editions-architecture/business-flows/place-order-f
 ZDL = ../payments-processing-api/domain-model.zdl.
 Test data chains C-01..C-22: header of src/test/resources/data.sql (assumptions A-01..A-09 there). Data.sql written
 from the entities and the modulith data.sql, then checked against the exported DDL.
-Approved models: payments-processing-api service-all 0.2.0 (tag release/service-all/v0.2.0); ZFL at
+Approved models: payments-processing-api service-all 0.2.2 (tag release/service-all/v0.2.2); ZFL at
 arcadia-editions-architecture tag baseline/place-order-flow-<n>.
-P-01 closed 2026-11-26: service-all 0.2.1 consumes FulfillmentFailed and OrderConfirmationRejected (T-27..T-30 unblocked,
-next AFK round).
+Round 1 (S0..S5) done on baseline-5 (archive docs/tasks/place-order-flow-5.md). Round 2 = S6, S7 on baseline-6.
+P-01 closed 2026-11-26: service-all 0.2.1 consumes fulfillment-failed-event-v1 and order-confirmation-rejected-event-v1;
+0.2.2: self-consumed channels carry only the event, receive ops doPaymentRetried / doPaymentFailed / doPaymentCaptureFailed.
+Round 2 baseline: every Spring context IT fails at context load: the generated FulfillmentFailedEventV1Consumer and
+OrderConfirmationRejectedEventV1Consumer need IFulfillmentFailedEventV1ConsumerService /
+IOrderConfirmationRejectedEventV1ConsumerService beans and app.kafka.topics.<channel>.topic. Both in T-27 (old T-29
+merged into it: the context needs both beans, so the S6 flow test could not pass without the S7 consumer).
+Flow tests T-28, T-30 follow T-26: a fresh orderId per test, OrderCreated authorized by the stand-in, then the trigger;
+the chains give the result shapes.
 Baseline failures confirmed by mvn verify 2026-11-25 (overlay, full-suite command). Data.sql matches the exported DDL.
 AsyncAPI templates: pom.xml uses SpringKafka (8adfd42), whose consumers need app.kafka.topics.<channel>.topic
 properties: until T-07 adds them no Spring context starts, so every repository and API IT fails at context load.
@@ -221,14 +229,14 @@ review: [x] claude-opus PASS round 2 (reports/review-S5.md -> T-34, reports/revi
 path: FulfillmentFailed > voidPayment[voided | void-failed] > PaymentVoided | PaymentVoidFailed > releaseStock > ... > end orderCancelled
 review: [ ]
 
-- [ ] T-27 mechanical AFK FulfillmentFailed consumer: map orderId and reason to VoidPaymentInput and call voidPayment (IFulfillmentFailedEventV1ConsumerService, service-all 0.2.1)
-      model: ../payments-processing-api/domain-model.zdl:191, ../arcadia-editions-architecture/business-flows/place-order-flow.zfl:246
-      test data: data.sql (C-02 shape AUTHORIZED; C-04 result)
-      tests: FulfillmentFailedConsumerServiceTest
+- [ ] T-27 mechanical AFK FulfillmentFailed and OrderConfirmationRejected consumers (both, so the Spring context loads): FulfillmentFailedConsumerService implements IFulfillmentFailedEventV1ConsumerService, OrderConfirmationRejectedConsumerService implements IOrderConfirmationRejectedEventV1ConsumerService (asyncapi.client, service-all 0.2.2), each maps orderId and reason to VoidPaymentInput and calls voidPayment, as PaymentCaptureFailedConsumerService; add app.kafka.topics fulfillment-failed-event-v1 (fulfillment-shipping.fulfillment-failed.event.avro.v1) and order-confirmation-rejected-event-v1 (orders-checkout.order-confirmation-rejected.event.avro.v1) to application.yml
+      model: ../payments-processing-api/domain-model.zdl:141-144, ../payments-processing-api/domain-model.zdl:185-194, ../arcadia-editions-architecture/business-flows/place-order-flow.zfl:237-252
+      test data: data/jpa/Payment/2.json (C-02 AUTHORIZED, FulfillmentFailed carrier_unavailable, result shape C-04), 4.json (C-04 VOIDED redelivery no-op), 5.json (C-05 STOCK_NOT_HELD), 6.json (C-06 ORDER_CANCELLED)
+      tests: FulfillmentFailedConsumerServiceTest, OrderConfirmationRejectedConsumerServiceTest, PaymentRepositoryIntegrationTest, PaymentsProcessingApiIntegrationTest, PlaceOrderFlowReservationTimerIntegrationTest, KafkaAvroWiringIntegrationTest, PlaceOrderFlowCompletedIntegrationTest, PlaceOrderFlowCancelledIntegrationTest, PlaceOrderFlowRetryIntegrationTest
       blocked by: T-24
-- [ ] T-28 bounded AFK Flow test orderCancelled, fulfillment failed (payments side): a FulfillmentFailed message voids an AUTHORIZED payment and publishes PaymentVoided
-      model: ../arcadia-editions-architecture/business-flows/place-order-flow.zfl:236-252, ../arcadia-editions-architecture/business-flows/place-order-flow.zfl:340-344
-      test data: data.sql (C-04)
+- [ ] T-28 bounded AFK Flow test orderCancelled, fulfillment failed (payments side): an OrderCreated the stand-in authorizes, then a FulfillmentFailed for that order, publishes PaymentVoided and nothing else (FlowEvents helper of T-33); redelivered, nothing
+      model: ../arcadia-editions-architecture/business-flows/place-order-flow.zfl:237-252, ../arcadia-editions-architecture/business-flows/place-order-flow.zfl:336-345
+      test data: fresh orderId per test (as T-26); result shape C-04
       tests: PlaceOrderFlowCancelledIntegrationTest#fulfillmentFailed
       blocked by: T-27
 
@@ -237,21 +245,16 @@ path: ... > PaymentAuthorized (after expiry) > confirmOrder[stock-not-held | ord
       > voidPayment > PaymentVoided > releaseStock (no-op) > end orderCancelled
 review: [ ]
 
-- [ ] T-29 mechanical AFK OrderConfirmationRejected consumer: map orderId and reason to VoidPaymentInput and call voidPayment (IOrderConfirmationRejectedEventV1ConsumerService, service-all 0.2.1)
-      model: ../payments-processing-api/domain-model.zdl:190, ../arcadia-editions-architecture/business-flows/place-order-flow.zfl:236-246
-      test data: data.sql (C-05, C-06)
-      tests: OrderConfirmationRejectedConsumerServiceTest
-      blocked by: T-24
-- [ ] T-30 bounded AFK Flow test late authorization (payments side): OrderConfirmationRejected for ORD-005 (STOCK_NOT_HELD) and ORD-006 (ORDER_CANCELLED) voids the late AUTHORIZED payment and publishes PaymentVoided
-      model: ../arcadia-editions-architecture/business-flows/place-order-flow.zfl:236-252, ../arcadia-editions-architecture/business-flows/place-order-flow.zfl:340-344
-      test data: data.sql (C-05, C-06)
+- [ ] T-30 bounded AFK Flow test late authorization (payments side): an OrderCreated the stand-in authorizes, then OrderConfirmationRejected for that order with reason STOCK_NOT_HELD, and in a second test ORDER_CANCELLED, publishes PaymentVoided and nothing else (FlowEvents helper of T-33)
+      model: ../arcadia-editions-architecture/business-flows/place-order-flow.zfl:148-164, ../arcadia-editions-architecture/business-flows/place-order-flow.zfl:237-252, ../arcadia-editions-architecture/business-flows/place-order-flow.zfl:336-345
+      test data: fresh orderId per test (as T-26); result shapes C-05 (STOCK_NOT_HELD), C-06 (ORDER_CANCELLED)
       tests: PlaceOrderFlowLateAuthorizationIntegrationTest
-      blocked by: T-29
+      blocked by: T-27
 
 <!--
 Next loop (decided 2026-11-26 by the person, not in this board)
 
 - Transactional outbox in every service that sends Kafka messages (closes the lost-PaymentAuthorized gap of review-S1:
   a failed send after the AUTHORIZED commit is never re-sent). Not a proposal: a new task of the next loop.
-- P-01 option A: fix zenwave-sdk ZDLToAsyncAPIClientPlugin, release service-all 0.2.1, regenerate; then T-27..T-30.
+- P-01 option A: done (service-all 0.2.1, 0.2.2); T-27..T-30 are round 2 (T-29 merged into T-27).
 -->

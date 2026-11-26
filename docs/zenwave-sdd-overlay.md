@@ -54,8 +54,9 @@ The flow also references the other contexts' ZDLs: `../orders-checkout-api`, `..
   `asyncapi.yml` on `main` (`fulfillment-shipping-api`, `orders-checkout-api`); `domain-model.zdl` `apis { asyncapi client ... }`
   points at `main` of the same two; both AsyncAPI contracts `$ref` `api-contract-commons` on `refs/heads/main`
   (servers, traits, error topics, message headers).
-- known contract gap: `asyncapi-client.yml` 0.2.0 lacks `order-confirmation-rejected-event-v1` and
-  `fulfillment-failed-event-v1`, which voidPayment consumes: `docs/proposals/P-01.md` (open).
+- contract gap closed: `asyncapi-client.yml` 0.2.0 lacked `order-confirmation-rejected-event-v1` and
+  `fulfillment-failed-event-v1` (`docs/proposals/P-01.md`, decided A); 0.2.1 has them, 0.2.2 drops the input command
+  messages of the self-consumed channels.
 
 **The ZFL's `@zdl(...)` paths** (`../../<context>-api/domain-model.zdl`, relative to `business-flows/`) resolve to
 the sibling clones above; no mapping needed. This service owns `payments-processing-api/domain-model.zdl` only.
@@ -88,15 +89,15 @@ mkdir -p target && mvn -q -DskipTests clean compile 2>&1 | tee target/compile.lo
 # focused tests of a task (the implementer runs only these)
 mvn -q test -Dtest='<TestClass>'
 # full suite with integration tests and containers (once per slice review)
-# about 4 minutes (222 s, 2026-11-25, committed pom); needs Docker (Testcontainers starts the docker-compose
+# about 4 minutes (245 s, 2026-11-26, service-all 0.2.2); needs Docker (Testcontainers starts the docker-compose
 # PostgreSQL / Kafka / Schema Registry on fixed ports 5432, 9092, 8081, 2181).
 # Surefire failures stop the build before the integration tests: add -Dmaven.test.failure.ignore=true to see both.
-# known failing at the baseline (2026-11-25), each fixed by a board task (docs/tasks.md tests:):
-#   PaymentRepositoryIntegrationTest.updateTest: asserts Instant.now() -> T-01
-#   PaymentsProcessingApiIntegrationTest.testGetPaymentStatus_400: no datasource (@EnableDockerCompose commented out), valid body -> T-01
-#   PaymentsProcessingApiIntegrationTest.testGetPaymentStatus_201: no datasource -> T-01; expects noPayment and started both set -> T-14
-# pom.xml uses the SpringKafka templates (8adfd42): every Spring context test (PaymentRepositoryIntegrationTest, all of
-# PaymentsProcessingApiIntegrationTest) also fails at context load until the app.kafka.topics.<channel>.topic properties exist (T-07).
+# known failing at baseline-6 (2026-11-26, round 2): Surefire 52/52 pass; all 17 Failsafe ITs (PaymentRepositoryIntegrationTest,
+# PaymentsProcessingApiIntegrationTest, PlaceOrderFlowReservationTimerIntegrationTest, KafkaAvroWiringIntegrationTest,
+# PlaceOrderFlowCompletedIntegrationTest, PlaceOrderFlowCancelledIntegrationTest, PlaceOrderFlowRetryIntegrationTest) error at
+# Spring context load: no IFulfillmentFailedEventV1ConsumerService / IOrderConfirmationRejectedEventV1ConsumerService bean
+# (service-all 0.2.1 consumers) and no app.kafka.topics for their channels -> T-27 (tests: in docs/tasks.md).
+# Baseline-5 list (T-01, T-07, T-14): fixed in round 1.
 mvn -q verify -Dmaven.test.failure.ignore=true
 # lint the models
 bash .zenwave/bin/lint-zdl.sh --strict ../payments-processing-api/domain-model.zdl
