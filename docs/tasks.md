@@ -23,7 +23,7 @@ properties: until T-07 adds them no Spring context starts, so every repository a
 -->
 
 ## S0 Baseline
-review: [ ]
+review: [x] claude-sonnet PASS (reports/review-S0.md)
 
 - [x] T-01 mechanical AFK Generated tests that should pass do: updateTest without Instant.now(), API ITs with a datasource (@EnableDockerCompose commented in BaseWebTestClientTest), testGetPaymentStatus_400 sends a valid body
       done: grok grok-4.7
@@ -64,7 +64,7 @@ path: OrderCreated > authorizePayment[authorized] > PaymentAuthorized > confirmO
       > capturePayment > PaymentCaptured > sendOrderConfirmation > end completed
 review: [ ]
 
-- [ ] T-09 advanced AFK authorizePayment authorized: creation only (no-op, no event, when a Payment for orderId exists in any state); save AUTHORIZATION_REQUESTED with attemptCount 1 and commit before calling the processor; on AUTHORIZED set providerReference + authorizedAt, persist, emit only PaymentAuthorized (not every alternative, as generated)
+- [/] T-09 advanced AFK authorizePayment authorized: creation only (no-op, no event, when a Payment for orderId exists in any state); save AUTHORIZATION_REQUESTED with attemptCount 1 and commit before calling the processor; on AUTHORIZED set providerReference + authorizedAt, persist, emit only PaymentAuthorized (not every alternative, as generated)
       model: ../arcadia-editions-architecture/business-flows/place-order-flow.zfl:114-121, ../payments-processing-api/domain-model.zdl:149-158, ../payments-processing-api/domain-model.zdl:89-96, ../payments-processing-api/domain-model.zdl:201-209
       test data: data.sql (C-02 redelivery; a new orderId such as ORD-099 for creation)
       tests: PaymentsProcessingServiceTest#authorizePaymentTest
@@ -84,11 +84,15 @@ review: [ ]
       test data: data.sql (C-12)
       tests: FulfillmentScheduledConsumerServiceTest
       blocked by: T-07, T-11
+- [ ] T-31 bounded AFK Kafka Avro wiring for the SpringKafka runtime: value serializer / deserializer for Avro (Confluent KafkaAvroSerializer / KafkaAvroDeserializer, simplest), schema.registry.url, specific.avro.reader true, listener ack-mode manual (the generated listeners take an Acknowledgment), the serializer dependency in pom.xml; ADR 0003 says these live in spring.kafka.*
+      fixes: .zenwave/handoff/place-order-flow/reports/review-S0.md (model axis, T-07)
+      model: ../payments-processing-api/domain-model.zdl:201-283
+      tests: a Kafka round-trip IT (produce PaymentAuthorized, consume it back as Avro), e.g. KafkaAvroWiringIntegrationTest
 - [ ] T-13 bounded AFK Flow test completed (payments side): an OrderCreated message publishes PaymentAuthorized on payments-processing.payment-authorized.event.avro.v1; a FulfillmentScheduled message for that order publishes PaymentCaptured
       model: ../arcadia-editions-architecture/business-flows/place-order-flow.zfl:114-121, ../arcadia-editions-architecture/business-flows/place-order-flow.zfl:196-199, ../arcadia-editions-architecture/business-flows/place-order-flow.zfl:340-342
       test data: data.sql (C-01, C-12)
       tests: PlaceOrderFlowCompletedTest
-      blocked by: T-10, T-12
+      blocked by: T-10, T-12, T-31
 
 ## S2 reservation timer read (getPaymentStatus)
 path: ReservationExpired > expireReservation > call getPaymentStatus[NoPaymentResult | PaymentStartedResult]
