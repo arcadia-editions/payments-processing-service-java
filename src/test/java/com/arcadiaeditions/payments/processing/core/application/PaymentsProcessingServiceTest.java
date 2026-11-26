@@ -215,7 +215,82 @@ class PaymentsProcessingServiceTest {
     }
 
     @Test
-    void reauthorizePaymentTest() { // TODO: implement this test
+    void reauthorizePaymentTest() { // C-16 a1 to a2, C-17 a2 to a3: stand-in authorizes
+        var producer = context.getEventsProducerInMemoryContext().paymentsProcessingEventsProducer();
+        var cases = List.of(List.of("ORD-016", 1), List.of("ORD-017", 2));
+        for (int i = 0; i < cases.size(); i++) {
+            var orderId = (String) cases.get(i).get(0);
+            var attempt = (Integer) cases.get(i).get(1);
+            var before = paymentRepository.findByOrderId(orderId).orElseThrow();
+
+            var payment = paymentsProcessingService
+                    .reauthorizePayment(
+                            new ReauthorizePaymentInput().setOrderId(orderId).setAttemptCount(attempt))
+                    .orElseThrow();
+
+            var saved = paymentRepository.findByOrderId(orderId).orElseThrow();
+            assertEquals(before.getId(), payment.getId());
+            assertEquals(PaymentStatus.AUTHORIZED, saved.getStatus());
+            assertEquals(attempt + 1, saved.getAttemptCount());
+            assertEquals("STANDIN-" + orderId, saved.getProviderReference());
+            assertEquals(TestClock.NOW, saved.getAuthorizedAt());
+            assertEquals(
+                    i + 1, producer.getOnPaymentAuthorizedCapturedMessages().size());
+            assertEquals(
+                    i + 1,
+                    producer.getCapturedMessages().values().stream()
+                            .mapToInt(List::size)
+                            .sum());
+        }
+    }
+
+    @Test
+    void reauthorizePaymentFailedAgainTest() { // C-17 a2 to a3 with a processor that always fails
+        var producer = context.getEventsProducerInMemoryContext().paymentsProcessingEventsProducer();
+        var before = paymentRepository.findByOrderId("ORD-017").orElseThrow();
+        before.setPaymentMethodId(StandInPaymentProcessor.PM_FAIL_ALWAYS);
+        paymentRepository.save(before);
+
+        var payment = paymentsProcessingService
+                .reauthorizePayment(
+                        new ReauthorizePaymentInput().setOrderId("ORD-017").setAttemptCount(2))
+                .orElseThrow();
+
+        var saved = paymentRepository.findByOrderId("ORD-017").orElseThrow();
+        assertEquals(saved.getId(), payment.getId());
+        assertEquals(PaymentStatus.FAILED, saved.getStatus());
+        assertEquals(3, saved.getAttemptCount());
+        assertEquals(TestClock.NOW, saved.getFailedAt());
+        assertEquals("processor_unavailable", saved.getFailureReason());
+        assertEquals(1, producer.getOnPaymentFailedCapturedMessages().size());
+        assertEquals(
+                1,
+                producer.getCapturedMessages().values().stream()
+                        .mapToInt(List::size)
+                        .sum());
+        var event = (PaymentFailed)
+                producer.getOnPaymentFailedCapturedMessages().get(0).getPayload();
+        assertEquals("ORD-017", event.getOrderId().toString());
+        assertEquals(3, event.getAttemptCount());
+    }
+
+    @Test
+    void reauthorizePaymentNoOpTest() { // C-11 none, C-08 wrong state, C-16 stale attemptCount
+        var producer = context.getEventsProducerInMemoryContext().paymentsProcessingEventsProducer();
+        assertTrue(paymentsProcessingService
+                .reauthorizePayment(
+                        new ReauthorizePaymentInput().setOrderId("ORD-011").setAttemptCount(1))
+                .isEmpty());
+        for (var c : List.of(List.of("ORD-008", 3), List.of("ORD-016", 2))) {
+            var orderId = (String) c.get(0);
+            var before = paymentRepository.findByOrderId(orderId).orElseThrow();
+            paymentsProcessingService.reauthorizePayment(
+                    new ReauthorizePaymentInput().setOrderId(orderId).setAttemptCount((Integer) c.get(1)));
+            var after = paymentRepository.findByOrderId(orderId).orElseThrow();
+            assertEquals(before.getStatus(), after.getStatus());
+            assertEquals(before.getAttemptCount(), after.getAttemptCount());
+        }
+        assertTrue(producer.getCapturedMessages().values().stream().allMatch(List::isEmpty));
     }
 
     @Test
