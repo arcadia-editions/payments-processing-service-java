@@ -82,7 +82,8 @@ review: [ ]
       test data: data.sql (C-12, C-20 from AUTHORIZED, C-01, C-22, C-21, C-04 redelivery)
       tests: PaymentsProcessingServiceTest#capturePaymentTest
       blocked by: T-01, T-03, T-04, T-06, T-08
-- [ ] T-12 mechanical AFK FulfillmentScheduledConsumerService: map FulfillmentScheduled.orderId to CapturePaymentInput and call capturePayment
+- [x] T-12 mechanical AFK FulfillmentScheduledConsumerService: map FulfillmentScheduled.orderId to CapturePaymentInput and call capturePayment
+      done: grok grok-4.7
       model: ../payments-processing-api/domain-model.zdl:135-138, ../payments-processing-api/domain-model.zdl:181
       test data: data.sql (C-12)
       tests: FulfillmentScheduledConsumerServiceTest
