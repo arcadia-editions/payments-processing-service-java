@@ -164,7 +164,7 @@ review: [ ]
       test data: data.sql (C-16 a1 to a2, C-17 a2 to a3, C-16 with stale attemptCount 2, C-11 none, C-08 wrong state)
       tests: PaymentsProcessingServiceTest#reauthorizePaymentTest
       blocked by: T-16, T-18
-- [ ] T-21 mechanical AFK PaymentFailedConsumerService and PaymentRetriedConsumerService: map both messages of each own channel (RetryPaymentInput / PaymentFailed, ReauthorizePaymentInput / PaymentRetried: orderId, attemptCount) and call retryPayment / reauthorizePayment
+- [/] T-21 mechanical AFK PaymentFailedConsumerService and PaymentRetriedConsumerService: map both messages of each own channel (RetryPaymentInput / PaymentFailed, ReauthorizePaymentInput / PaymentRetried: orderId, attemptCount) and call retryPayment / reauthorizePayment
       model: ../payments-processing-api/domain-model.zdl:165, ../payments-processing-api/domain-model.zdl:176, ../payments-processing-api/domain-model.zdl:98-108
       test data: data.sql (C-16)
       tests: PaymentFailedConsumerServiceTest, PaymentRetriedConsumerServiceTest
@@ -213,13 +213,13 @@ review: [ ]
       test data: data.sql (C-02 shape AUTHORIZED; C-04 result)
       tests: FulfillmentFailedConsumerServiceTest
       blocked by: T-24
-      blocked: P-01
+      blocked: P-01 (decided A, next loop)
 - [!] T-28 bounded AFK Flow test orderCancelled, fulfillment failed (payments side): a FulfillmentFailed message voids an AUTHORIZED payment and publishes PaymentVoided
       model: ../arcadia-editions-architecture/business-flows/place-order-flow.zfl:236-252, ../arcadia-editions-architecture/business-flows/place-order-flow.zfl:340-344
       test data: data.sql (C-04)
       tests: PlaceOrderFlowCancelledIntegrationTest#fulfillmentFailed
       blocked by: T-27
-      blocked: P-01
+      blocked: P-01 (decided A, next loop)
 
 ## S7 late authorization rejected
 path: ... > PaymentAuthorized (after expiry) > confirmOrder[stock-not-held | order-cancelled] > OrderConfirmationRejected
@@ -231,10 +231,16 @@ review: [ ]
       test data: data.sql (C-05, C-06)
       tests: OrderConfirmationRejectedConsumerServiceTest
       blocked by: T-24
-      blocked: P-01
+      blocked: P-01 (decided A, next loop)
 - [!] T-30 bounded AFK Flow test late authorization (payments side): OrderConfirmationRejected for ORD-005 (STOCK_NOT_HELD) and ORD-006 (ORDER_CANCELLED) voids the late AUTHORIZED payment and publishes PaymentVoided
       model: ../arcadia-editions-architecture/business-flows/place-order-flow.zfl:236-252, ../arcadia-editions-architecture/business-flows/place-order-flow.zfl:340-344
       test data: data.sql (C-05, C-06)
       tests: PlaceOrderFlowLateAuthorizationIntegrationTest
       blocked by: T-29
-      blocked: P-01
+      blocked: P-01 (decided A, next loop)
+
+## Next loop (decided 2026-11-26 by the person, not in this board)
+
+- Transactional outbox in every service that sends Kafka messages (closes the lost-PaymentAuthorized gap of review-S1:
+  a failed send after the AUTHORIZED commit is never re-sent). Not a proposal: a new task of the next loop.
+- P-01 option A: fix zenwave-sdk ZDLToAsyncAPIClientPlugin, release service-all 0.2.1, regenerate; then T-27..T-30.
