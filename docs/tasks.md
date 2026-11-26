@@ -186,7 +186,8 @@ path: FulfillmentScheduled > capturePayment[PaymentCaptureFailed] > voidPayment[
       > PaymentVoided | PaymentVoidFailed > releaseStock > ... > end orderCancelled
 review: [ ]
 
-- [ ] T-23 bounded AFK capturePayment capture failed: the processor refuses the capture, CAPTURE_FAILED + failureReason, persist, emit only PaymentCaptureFailed (reason, failedAt)
+- [x] T-23 bounded AFK capturePayment capture failed: the processor refuses the capture, CAPTURE_FAILED + failureReason, persist, emit only PaymentCaptureFailed (reason, failedAt)
+      done: claude-sonnet sonnet
       model: ../arcadia-editions-architecture/business-flows/place-order-flow.zfl:190-199, ../payments-processing-api/domain-model.zdl:180-183, ../payments-processing-api/domain-model.zdl:258-264
       test data: data.sql (C-12, stub-driven); result shape C-21
       tests: PaymentsProcessingServiceTest#capturePaymentFailedTest
