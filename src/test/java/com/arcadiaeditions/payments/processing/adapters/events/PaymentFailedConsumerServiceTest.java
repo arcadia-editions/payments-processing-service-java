@@ -9,7 +9,6 @@ import com.arcadiaeditions.payments.processing.core.application.PaymentsProcessi
 import com.arcadiaeditions.payments.processing.core.domain.PaymentStatus;
 import com.arcadiaeditions.payments.processing.events.avro.PaymentFailed;
 import com.arcadiaeditions.payments.processing.events.avro.PaymentRetried;
-import com.arcadiaeditions.payments.processing.events.avro.RetryPaymentInput;
 import com.arcadiaeditions.payments.processing.infrastructure.jpa.inmemory.PaymentRepositoryInMemory;
 import java.time.Duration;
 import java.time.Instant;
@@ -19,7 +18,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 /**
- * payment-failed-event-v1 -> retryPayment. Both channel messages. In-memory service, no Spring context.
+ * payment-failed-event-v1 -> retryPayment. Event message only. In-memory service, no Spring context.
  */
 class PaymentFailedConsumerServiceTest {
 
@@ -49,17 +48,7 @@ class PaymentFailedConsumerServiceTest {
     void paymentFailedRetriesFailedPayment() {
         var payload = new PaymentFailed("ORD-016", "CUST-OTHER", 1, "other_reason", "2026-01-01T00:00:00Z");
 
-        consumer.doRetryPayment(payload, new IPaymentFailedEventV1ConsumerService.PaymentFailedHeaders());
-
-        assertRetriedOrd016();
-    }
-
-    /** C-16 through the command message: only orderId and attemptCount. Same outcome. */
-    @Test
-    void retryPaymentInputRetriesFailedPayment() {
-        var payload = new RetryPaymentInput("ORD-016", 1);
-
-        consumer.doRetryPayment(payload, new IPaymentFailedEventV1ConsumerService.RetryPaymentInputHeaders());
+        consumer.doPaymentFailed(payload, new IPaymentFailedEventV1ConsumerService.PaymentFailedHeaders());
 
         assertRetriedOrd016();
     }
@@ -71,7 +60,7 @@ class PaymentFailedConsumerServiceTest {
         var before = paymentRepository.findByOrderId("ORD-016").orElseThrow();
         var payload = new PaymentFailed("ORD-016", "CUST-016", 2, "processor_unavailable", "2026-10-14T09:59:50Z");
 
-        consumer.doRetryPayment(payload, new IPaymentFailedEventV1ConsumerService.PaymentFailedHeaders());
+        consumer.doPaymentFailed(payload, new IPaymentFailedEventV1ConsumerService.PaymentFailedHeaders());
 
         var after = paymentRepository.findByOrderId("ORD-016").orElseThrow();
         assertEquals(before.getStatus(), after.getStatus());
@@ -81,14 +70,14 @@ class PaymentFailedConsumerServiceTest {
         assertTrue(producer.getCapturedMessages().values().stream().allMatch(List::isEmpty));
     }
 
-    /** C-11: no Payment for ORD-011. The command message is a no-op. */
+    /** C-11: no Payment for ORD-011. The event message is a no-op. */
     @Test
-    void retryPaymentInputUnknownOrderIsNoOp() {
+    void paymentFailedUnknownOrderIsNoOp() {
         var producer = context.getEventsProducerInMemoryContext().paymentsProcessingEventsProducer();
         var count = paymentRepository.count();
-        var payload = new RetryPaymentInput("ORD-011", 1);
+        var payload = new PaymentFailed("ORD-011", "CUST-011", 1, "processor_unavailable", "2026-10-14T09:59:50Z");
 
-        consumer.doRetryPayment(payload, new IPaymentFailedEventV1ConsumerService.RetryPaymentInputHeaders());
+        consumer.doPaymentFailed(payload, new IPaymentFailedEventV1ConsumerService.PaymentFailedHeaders());
 
         assertEquals(count, paymentRepository.count());
         assertTrue(paymentRepository.findByOrderId("ORD-011").isEmpty());

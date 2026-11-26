@@ -3,7 +3,6 @@ package com.arcadiaeditions.payments.processing.adapters.events;
 import com.arcadiaeditions.payments.processing.asyncapi.provider.IPaymentFailedEventV1ConsumerService;
 import com.arcadiaeditions.payments.processing.core.inbound.PaymentsProcessingService;
 import com.arcadiaeditions.payments.processing.events.avro.PaymentFailed;
-import com.arcadiaeditions.payments.processing.events.avro.RetryPaymentInput;
 import org.springframework.stereotype.Component;
 
 /**
@@ -22,12 +21,7 @@ public class PaymentFailedConsumerService implements IPaymentFailedEventV1Consum
     }
 
     @Override
-    public void doRetryPayment(RetryPaymentInput payload, RetryPaymentInputHeaders headers) {
-        paymentsProcessingService.retryPayment(mapper.asRetryPaymentInput(payload));
-    }
-
-    @Override
-    public void doRetryPayment(PaymentFailed payload, PaymentFailedHeaders headers) {
+    public void doPaymentFailed(PaymentFailed payload, PaymentFailedHeaders headers) {
         paymentsProcessingService.retryPayment(mapper.asRetryPaymentInput(payload));
     }
 }

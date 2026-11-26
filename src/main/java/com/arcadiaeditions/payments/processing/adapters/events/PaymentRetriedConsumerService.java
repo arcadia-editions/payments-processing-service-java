@@ -3,7 +3,6 @@ package com.arcadiaeditions.payments.processing.adapters.events;
 import com.arcadiaeditions.payments.processing.asyncapi.provider.IPaymentRetriedEventV1ConsumerService;
 import com.arcadiaeditions.payments.processing.core.inbound.PaymentsProcessingService;
 import com.arcadiaeditions.payments.processing.events.avro.PaymentRetried;
-import com.arcadiaeditions.payments.processing.events.avro.ReauthorizePaymentInput;
 import org.springframework.stereotype.Component;
 
 /**
@@ -22,12 +21,7 @@ public class PaymentRetriedConsumerService implements IPaymentRetriedEventV1Cons
     }
 
     @Override
-    public void doReauthorizePayment(ReauthorizePaymentInput payload, ReauthorizePaymentInputHeaders headers) {
-        paymentsProcessingService.reauthorizePayment(mapper.asReauthorizePaymentInput(payload));
-    }
-
-    @Override
-    public void doReauthorizePayment(PaymentRetried payload, PaymentRetriedHeaders headers) {
+    public void doPaymentRetried(PaymentRetried payload, PaymentRetriedHeaders headers) {
         paymentsProcessingService.reauthorizePayment(mapper.asReauthorizePaymentInput(payload));
     }
 }

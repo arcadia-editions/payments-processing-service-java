@@ -164,7 +164,7 @@ review: [x] claude-opus PASS (reports/review-S4.md; every worker implemented par
       test data: data.sql (C-16 a1 to a2, C-17 a2 to a3, C-16 with stale attemptCount 2, C-11 none, C-08 wrong state)
       tests: PaymentsProcessingServiceTest#reauthorizePaymentTest
       blocked by: T-16, T-18
-- [x] T-21 mechanical AFK PaymentFailedConsumerService and PaymentRetriedConsumerService: map both messages of each own channel (RetryPaymentInput / PaymentFailed, ReauthorizePaymentInput / PaymentRetried: orderId, attemptCount) and call retryPayment / reauthorizePayment
+- [x] T-21 mechanical AFK PaymentFailedConsumerService and PaymentRetriedConsumerService: map the event of each own channel (PaymentFailed, PaymentRetried: orderId, attemptCount) and call retryPayment / reauthorizePayment
       done: grok grok-4.7
       model: ../payments-processing-api/domain-model.zdl:165, ../payments-processing-api/domain-model.zdl:176, ../payments-processing-api/domain-model.zdl:98-108
       test data: data.sql (C-16)
@@ -198,7 +198,7 @@ review: [x] claude-opus PASS round 2 (reports/review-S5.md -> T-34, reports/revi
       test data: data.sql (C-21 from CAPTURE_FAILED, C-02 from AUTHORIZED, C-15 / C-09 / C-10 / C-11 no-op)
       tests: PaymentsProcessingServiceTest#voidPaymentTest
       blocked by: T-03, T-04, T-05, T-06
-- [x] T-25 mechanical AFK PaymentCaptureFailedConsumerService: map both messages of the own channel (VoidPaymentInput / PaymentCaptureFailed: orderId, reason) to VoidPaymentInput and call voidPayment
+- [x] T-25 mechanical AFK PaymentCaptureFailedConsumerService: map the event of the own channel (PaymentCaptureFailed: orderId, reason) to VoidPaymentInput and call voidPayment
       done: grok grok-4.7
       model: ../payments-processing-api/domain-model.zdl:192, ../payments-processing-api/domain-model.zdl:141-144
       test data: data.sql (C-21)

@@ -8,7 +8,6 @@ import com.arcadiaeditions.payments.processing.config.TestClock;
 import com.arcadiaeditions.payments.processing.core.domain.PaymentStatus;
 import com.arcadiaeditions.payments.processing.events.avro.PaymentCaptureFailed;
 import com.arcadiaeditions.payments.processing.events.avro.PaymentVoided;
-import com.arcadiaeditions.payments.processing.events.avro.VoidPaymentInput;
 import com.arcadiaeditions.payments.processing.infrastructure.jpa.inmemory.PaymentRepositoryInMemory;
 import java.time.Instant;
 import java.util.List;
@@ -16,7 +15,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 /**
- * payment-capture-failed-event-v1 -> voidPayment. Both channel messages. In-memory service, no Spring context.
+ * payment-capture-failed-event-v1 -> voidPayment. Event message only. In-memory service, no Spring context.
  */
 class PaymentCaptureFailedConsumerServiceTest {
 
@@ -40,17 +39,8 @@ class PaymentCaptureFailedConsumerServiceTest {
     void paymentCaptureFailedVoidsCaptureFailedPayment() {
         var payload = new PaymentCaptureFailed("ORD-021", "CUST-OTHER", "capture_rejected", "2026-01-01T00:00:00Z");
 
-        consumer.doVoidPayment(payload, new IPaymentCaptureFailedEventV1ConsumerService.PaymentCaptureFailedHeaders());
-
-        assertVoidedOrd021();
-    }
-
-    /** C-21 through the command message: only orderId and reason. Same outcome. */
-    @Test
-    void voidPaymentInputVoidsCaptureFailedPayment() {
-        var payload = new VoidPaymentInput("ORD-021", "capture_rejected");
-
-        consumer.doVoidPayment(payload, new IPaymentCaptureFailedEventV1ConsumerService.VoidPaymentInputHeaders());
+        consumer.doPaymentCaptureFailed(
+                payload, new IPaymentCaptureFailedEventV1ConsumerService.PaymentCaptureFailedHeaders());
 
         assertVoidedOrd021();
     }
@@ -62,8 +52,8 @@ class PaymentCaptureFailedConsumerServiceTest {
         var payload = new PaymentCaptureFailed("ORD-021", "CUST-021", "capture_rejected", "2026-10-14T09:55:00Z");
         var headers = new IPaymentCaptureFailedEventV1ConsumerService.PaymentCaptureFailedHeaders();
 
-        consumer.doVoidPayment(payload, headers);
-        consumer.doVoidPayment(payload, headers);
+        consumer.doPaymentCaptureFailed(payload, headers);
+        consumer.doPaymentCaptureFailed(payload, headers);
 
         var saved = paymentRepository.findByOrderId("ORD-021").orElseThrow();
         assertEquals(PaymentStatus.VOIDED, saved.getStatus());
@@ -88,7 +78,8 @@ class PaymentCaptureFailedConsumerServiceTest {
         var producer = context.getEventsProducerInMemoryContext().paymentsProcessingEventsProducer();
         var payload = new PaymentCaptureFailed("ORD-009", "CUST-OTHER", "fulfillment_failed", "2026-01-01T00:00:00Z");
 
-        consumer.doVoidPayment(payload, new IPaymentCaptureFailedEventV1ConsumerService.PaymentCaptureFailedHeaders());
+        consumer.doPaymentCaptureFailed(
+                payload, new IPaymentCaptureFailedEventV1ConsumerService.PaymentCaptureFailedHeaders());
 
         var saved = paymentRepository.findByOrderId("ORD-009").orElseThrow();
         assertEquals(PaymentStatus.VOIDED, saved.getStatus());
@@ -100,14 +91,15 @@ class PaymentCaptureFailedConsumerServiceTest {
         assertTrue(producer.getCapturedMessages().values().stream().allMatch(List::isEmpty));
     }
 
-    /** C-11: no Payment for ORD-011. The command message is a no-op. */
+    /** C-11: no Payment for ORD-011. The event message is a no-op. */
     @Test
-    void voidPaymentInputUnknownOrderIsNoOp() {
+    void paymentCaptureFailedUnknownOrderIsNoOp() {
         var producer = context.getEventsProducerInMemoryContext().paymentsProcessingEventsProducer();
         var count = paymentRepository.count();
-        var payload = new VoidPaymentInput("ORD-011", "capture_rejected");
+        var payload = new PaymentCaptureFailed("ORD-011", "CUST-011", "capture_rejected", "2026-10-14T09:55:00Z");
 
-        consumer.doVoidPayment(payload, new IPaymentCaptureFailedEventV1ConsumerService.VoidPaymentInputHeaders());
+        consumer.doPaymentCaptureFailed(
+                payload, new IPaymentCaptureFailedEventV1ConsumerService.PaymentCaptureFailedHeaders());
 
         assertEquals(count, paymentRepository.count());
         assertTrue(paymentRepository.findByOrderId("ORD-011").isEmpty());

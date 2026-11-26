@@ -3,7 +3,6 @@ package com.arcadiaeditions.payments.processing.adapters.events;
 import com.arcadiaeditions.payments.processing.asyncapi.provider.IPaymentCaptureFailedEventV1ConsumerService;
 import com.arcadiaeditions.payments.processing.core.inbound.PaymentsProcessingService;
 import com.arcadiaeditions.payments.processing.events.avro.PaymentCaptureFailed;
-import com.arcadiaeditions.payments.processing.events.avro.VoidPaymentInput;
 import org.springframework.stereotype.Component;
 
 /**
@@ -22,12 +21,7 @@ public class PaymentCaptureFailedConsumerService implements IPaymentCaptureFaile
     }
 
     @Override
-    public void doVoidPayment(VoidPaymentInput payload, VoidPaymentInputHeaders headers) {
-        paymentsProcessingService.voidPayment(mapper.asVoidPaymentInput(payload));
-    }
-
-    @Override
-    public void doVoidPayment(PaymentCaptureFailed payload, PaymentCaptureFailedHeaders headers) {
+    public void doPaymentCaptureFailed(PaymentCaptureFailed payload, PaymentCaptureFailedHeaders headers) {
         paymentsProcessingService.voidPayment(mapper.asVoidPaymentInput(payload));
     }
 }

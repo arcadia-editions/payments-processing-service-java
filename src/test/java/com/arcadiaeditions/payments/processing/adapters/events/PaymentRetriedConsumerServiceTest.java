@@ -8,7 +8,6 @@ import com.arcadiaeditions.payments.processing.config.TestClock;
 import com.arcadiaeditions.payments.processing.core.domain.PaymentStatus;
 import com.arcadiaeditions.payments.processing.events.avro.PaymentAuthorized;
 import com.arcadiaeditions.payments.processing.events.avro.PaymentRetried;
-import com.arcadiaeditions.payments.processing.events.avro.ReauthorizePaymentInput;
 import com.arcadiaeditions.payments.processing.infrastructure.jpa.inmemory.PaymentRepositoryInMemory;
 import java.time.Instant;
 import java.util.List;
@@ -16,7 +15,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 /**
- * payment-retried-event-v1 -> reauthorizePayment. Both channel messages. In-memory service, no Spring context.
+ * payment-retried-event-v1 -> reauthorizePayment. Event message only. In-memory service, no Spring context.
  */
 class PaymentRetriedConsumerServiceTest {
 
@@ -39,18 +38,7 @@ class PaymentRetriedConsumerServiceTest {
     void paymentRetriedReauthorizesFailedPayment() {
         var payload = new PaymentRetried("ORD-016", "CUST-OTHER", 1, "2026-01-01T00:00:00Z");
 
-        consumer.doReauthorizePayment(payload, new IPaymentRetriedEventV1ConsumerService.PaymentRetriedHeaders());
-
-        assertAuthorizedOrd016();
-    }
-
-    /** C-16 through the command message: only orderId and attemptCount. Same outcome. */
-    @Test
-    void reauthorizePaymentInputReauthorizesFailedPayment() {
-        var payload = new ReauthorizePaymentInput("ORD-016", 1);
-
-        consumer.doReauthorizePayment(
-                payload, new IPaymentRetriedEventV1ConsumerService.ReauthorizePaymentInputHeaders());
+        consumer.doPaymentRetried(payload, new IPaymentRetriedEventV1ConsumerService.PaymentRetriedHeaders());
 
         assertAuthorizedOrd016();
     }
@@ -62,11 +50,11 @@ class PaymentRetriedConsumerServiceTest {
         var payload = new PaymentRetried("ORD-016", "CUST-016", 1, "2026-10-14T10:00:00Z");
         var headers = new IPaymentRetriedEventV1ConsumerService.PaymentRetriedHeaders();
 
-        consumer.doReauthorizePayment(payload, headers);
+        consumer.doPaymentRetried(payload, headers);
         var authorizedAt =
                 paymentRepository.findByOrderId("ORD-016").orElseThrow().getAuthorizedAt();
 
-        consumer.doReauthorizePayment(payload, headers);
+        consumer.doPaymentRetried(payload, headers);
 
         var saved = paymentRepository.findByOrderId("ORD-016").orElseThrow();
         assertEquals(PaymentStatus.AUTHORIZED, saved.getStatus());
@@ -82,13 +70,12 @@ class PaymentRetriedConsumerServiceTest {
 
     /** C-16 stale attemptCount 2: no-op, no event. */
     @Test
-    void reauthorizePaymentInputStaleAttemptCountIsNoOp() {
+    void paymentRetriedStaleAttemptCountIsNoOp() {
         var producer = context.getEventsProducerInMemoryContext().paymentsProcessingEventsProducer();
         var before = paymentRepository.findByOrderId("ORD-016").orElseThrow();
-        var payload = new ReauthorizePaymentInput("ORD-016", 2);
+        var payload = new PaymentRetried("ORD-016", "CUST-016", 2, "2026-10-14T10:00:00Z");
 
-        consumer.doReauthorizePayment(
-                payload, new IPaymentRetriedEventV1ConsumerService.ReauthorizePaymentInputHeaders());
+        consumer.doPaymentRetried(payload, new IPaymentRetriedEventV1ConsumerService.PaymentRetriedHeaders());
 
         var after = paymentRepository.findByOrderId("ORD-016").orElseThrow();
         assertEquals(before.getStatus(), after.getStatus());
@@ -104,7 +91,7 @@ class PaymentRetriedConsumerServiceTest {
         var count = paymentRepository.count();
         var payload = new PaymentRetried("ORD-011", "CUST-011", 1, "2026-10-14T10:00:00Z");
 
-        consumer.doReauthorizePayment(payload, new IPaymentRetriedEventV1ConsumerService.PaymentRetriedHeaders());
+        consumer.doPaymentRetried(payload, new IPaymentRetriedEventV1ConsumerService.PaymentRetriedHeaders());
 
         assertEquals(count, paymentRepository.count());
         assertTrue(paymentRepository.findByOrderId("ORD-011").isEmpty());
