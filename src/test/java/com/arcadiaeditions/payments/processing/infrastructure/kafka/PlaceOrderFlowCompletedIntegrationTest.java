@@ -29,7 +29,7 @@ import org.springframework.test.context.ActiveProfiles;
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.MOCK)
 @ActiveProfiles("test")
 @DockerComposeInitializer.EnableDockerCompose
-class PlaceOrderFlowCompletedTest {
+class PlaceOrderFlowCompletedIntegrationTest {
 
     @Autowired
     KafkaProperties kafkaProperties;
