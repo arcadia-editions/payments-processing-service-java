@@ -37,15 +37,49 @@ spring:
         useServerPrepStmts: true
   kafka:
     bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS}
+    properties:
+      schema.registry.url: ${SCHEMA_REGISTRY_URL:http://localhost:8081}
+      specific.avro.reader: true
+    listener:
+      ack-mode: manual
     producer:
       key-serializer: org.apache.kafka.common.serialization.LongSerializer
+      value-serializer: io.confluent.kafka.serializers.KafkaAvroSerializer
     consumer:
       key-deserializer: org.apache.kafka.common.serialization.LongDeserializer
-  cloud:
-    stream:
-      kafka.binder.enable-observation: true
-      function:
-        definition: on-customer-event;
-      bindings:
-        on-customer-event-out:
-          destination: customer.events
+      value-deserializer: io.confluent.kafka.serializers.KafkaAvroDeserializer
+      auto-offset-reset: earliest
+      # Listeners have no per-channel groupId; Spring Kafka refuses to start without one.
+      # Same value as asyncapi.yml x-application-bindings.x-groupId.
+      group-id: payments_processing
+
+# SpringKafka templates (ADR 0003): topic is required for consumers; producers default to the channel name.
+# Names are the AsyncAPI channel addresses (asyncapi.yml, asyncapi-client.yml).
+app:
+  # payment processor call timeout (ZDL authorizePayment / reauthorizePayment, ADR 0002)
+  payment-processor:
+    timeout: 30s
+  kafka:
+    topics:
+      payment-authorized-event-v1:
+        topic: payments-processing.payment-authorized.event.avro.v1
+      payment-declined-event-v1:
+        topic: payments-processing.payment-declined.event.avro.v1
+      payment-failed-event-v1:
+        topic: payments-processing.payment-failed.event.avro.v1
+      payment-retried-event-v1:
+        topic: payments-processing.payment-retried.event.avro.v1
+      payment-retry-exhausted-event-v1:
+        topic: payments-processing.payment-retry-exhausted.event.avro.v1
+      payment-captured-event-v1:
+        topic: payments-processing.payment-captured.event.avro.v1
+      payment-capture-failed-event-v1:
+        topic: payments-processing.payment-capture-failed.event.avro.v1
+      payment-voided-event-v1:
+        topic: payments-processing.payment-voided.event.avro.v1
+      payment-void-failed-event-v1:
+        topic: payments-processing.payment-void-failed.event.avro.v1
+      order-created-event-v1:
+        topic: orders-checkout.order-created.event.avro.v1
+      fulfillment-scheduled-event-v1:
+        topic: fulfillment-shipping.fulfillment-scheduled.event.avro.v1

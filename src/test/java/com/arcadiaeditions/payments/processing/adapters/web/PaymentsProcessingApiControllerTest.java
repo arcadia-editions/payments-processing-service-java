@@ -30,8 +30,16 @@ public class PaymentsProcessingApiControllerTest {
 
     @Test
     public void getPaymentStatusTest() {
-        GetPaymentStatusInputDTO reqBody = null;
-        var response = controller.getPaymentStatus(reqBody);
+        var response = controller.getPaymentStatus(new GetPaymentStatusInputDTO().orderId("ORD-001"));
         Assertions.assertEquals(201, response.getStatusCode().value());
+        Assertions.assertEquals(
+                GetPaymentStatusOutcomeDTO.STARTED, response.getBody().getOutcome());
+        Assertions.assertEquals("ORD-001", response.getBody().getStarted().getOrderId());
+        Assertions.assertNull(response.getBody().getNoPayment());
+
+        var none = controller.getPaymentStatus(new GetPaymentStatusInputDTO().orderId("ORD-011"));
+        Assertions.assertEquals(
+                GetPaymentStatusOutcomeDTO.NO_PAYMENT, none.getBody().getOutcome());
+        Assertions.assertEquals("ORD-011", none.getBody().getNoPayment().getOrderId());
     }
 }

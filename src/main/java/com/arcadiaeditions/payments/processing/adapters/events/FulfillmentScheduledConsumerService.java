@@ -7,12 +7,14 @@ import org.springframework.stereotype.Component;
 
 /**
  * Inbound adapter: fulfillment-scheduled-event-v1 -> PaymentsProcessingService.capturePayment.
- * Stub so the Spring context boots; the generator does not emit adapters for AsyncAPIGenerator interfaces.
+ * The generator does not emit adapters for AsyncAPIGenerator interfaces.
  */
 @Component
 public class FulfillmentScheduledConsumerService implements IFulfillmentScheduledEventV1ConsumerService {
 
     private final PaymentsProcessingService paymentsProcessingService;
+
+    private final FulfillmentScheduledConsumerMapper mapper = FulfillmentScheduledConsumerMapper.INSTANCE;
 
     public FulfillmentScheduledConsumerService(PaymentsProcessingService paymentsProcessingService) {
         this.paymentsProcessingService = paymentsProcessingService;
@@ -20,7 +22,6 @@ public class FulfillmentScheduledConsumerService implements IFulfillmentSchedule
 
     @Override
     public void onFulfillmentScheduledEventV1(FulfillmentScheduled payload, FulfillmentScheduledHeaders headers) {
-        // TODO CUSTOM_REQUIRED: map payload to CapturePaymentInput and call paymentsProcessingService.capturePayment
-        throw new UnsupportedOperationException("Not implemented");
+        paymentsProcessingService.capturePayment(mapper.asCapturePaymentInput(payload));
     }
 }

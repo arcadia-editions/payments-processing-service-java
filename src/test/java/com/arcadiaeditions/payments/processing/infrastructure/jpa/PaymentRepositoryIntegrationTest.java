@@ -32,6 +32,20 @@ class PaymentRepositoryIntegrationTest extends BaseRepositoryIntegrationTest {
     }
 
     @Test
+    void findByOrderIdTest() {
+        // C-01: the captured payment for ORD-001.
+        var payment = paymentRepository.findByOrderId("ORD-001").orElseThrow();
+        Assertions.assertEquals(1L, payment.getId());
+        Assertions.assertEquals("ORD-001", payment.getOrderId());
+        Assertions.assertEquals("CUST-001", payment.getCustomerId());
+        Assertions.assertEquals(PaymentStatus.CAPTURED, payment.getStatus());
+        Assertions.assertEquals(0, new BigDecimal("49.99").compareTo(payment.getAmount()));
+
+        // C-11: no Payment row for ORD-011.
+        Assertions.assertTrue(paymentRepository.findByOrderId("ORD-011").isEmpty());
+    }
+
+    @Test
     void saveTest() {
         Payment payment = new Payment();
         payment.setOrderId("");
@@ -64,6 +78,8 @@ class PaymentRepositoryIntegrationTest extends BaseRepositoryIntegrationTest {
     @Test
     void updateTest() {
         var id = 1L;
+        // Fixed test now from data.sql. A whole second survives PostgreSQL microsecond truncation.
+        var at = Instant.parse("2026-10-14T10:00:00Z");
         var payment = paymentRepository.findById(id).orElseThrow();
         payment.setOrderId("");
         payment.setCustomerId("");
@@ -74,12 +90,12 @@ class PaymentRepositoryIntegrationTest extends BaseRepositoryIntegrationTest {
         payment.setStatus(PaymentStatus.values()[0]);
         payment.setProviderReference("");
         payment.setAttemptCount(0);
-        payment.setAuthorizedAt(Instant.now());
-        payment.setDeclinedAt(Instant.now());
-        payment.setFailedAt(Instant.now());
-        payment.setCapturedAt(Instant.now());
-        payment.setVoidedAt(Instant.now());
-        payment.setVoidFailedAt(Instant.now());
+        payment.setAuthorizedAt(at);
+        payment.setDeclinedAt(at);
+        payment.setFailedAt(at);
+        payment.setCapturedAt(at);
+        payment.setVoidedAt(at);
+        payment.setVoidFailedAt(at);
         payment.setFailureReason("");
 
         payment = paymentRepository.save(payment);
@@ -92,12 +108,12 @@ class PaymentRepositoryIntegrationTest extends BaseRepositoryIntegrationTest {
         Assertions.assertEquals(PaymentStatus.values()[0], payment.getStatus());
         Assertions.assertEquals("", payment.getProviderReference());
         Assertions.assertEquals(0, payment.getAttemptCount());
-        Assertions.assertEquals(Instant.now(), payment.getAuthorizedAt());
-        Assertions.assertEquals(Instant.now(), payment.getDeclinedAt());
-        Assertions.assertEquals(Instant.now(), payment.getFailedAt());
-        Assertions.assertEquals(Instant.now(), payment.getCapturedAt());
-        Assertions.assertEquals(Instant.now(), payment.getVoidedAt());
-        Assertions.assertEquals(Instant.now(), payment.getVoidFailedAt());
+        Assertions.assertEquals(at, payment.getAuthorizedAt());
+        Assertions.assertEquals(at, payment.getDeclinedAt());
+        Assertions.assertEquals(at, payment.getFailedAt());
+        Assertions.assertEquals(at, payment.getCapturedAt());
+        Assertions.assertEquals(at, payment.getVoidedAt());
+        Assertions.assertEquals(at, payment.getVoidFailedAt());
         Assertions.assertEquals("", payment.getFailureReason());
     }
 

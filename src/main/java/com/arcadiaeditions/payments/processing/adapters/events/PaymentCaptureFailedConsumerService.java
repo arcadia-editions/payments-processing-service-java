@@ -8,12 +8,14 @@ import org.springframework.stereotype.Component;
 
 /**
  * Inbound adapter: payment-capture-failed-event-v1 -> PaymentsProcessingService.voidPayment.
- * Stub so the Spring context boots; the generator does not emit adapters for AsyncAPIGenerator interfaces.
+ * The generator does not emit adapters for AsyncAPIGenerator interfaces.
  */
 @Component
 public class PaymentCaptureFailedConsumerService implements IPaymentCaptureFailedEventV1ConsumerService {
 
     private final PaymentsProcessingService paymentsProcessingService;
+
+    private final PaymentCaptureFailedConsumerMapper mapper = PaymentCaptureFailedConsumerMapper.INSTANCE;
 
     public PaymentCaptureFailedConsumerService(PaymentsProcessingService paymentsProcessingService) {
         this.paymentsProcessingService = paymentsProcessingService;
@@ -21,13 +23,11 @@ public class PaymentCaptureFailedConsumerService implements IPaymentCaptureFaile
 
     @Override
     public void doVoidPayment(VoidPaymentInput payload, VoidPaymentInputHeaders headers) {
-        // TODO CUSTOM_REQUIRED: map payload to VoidPaymentInput and call paymentsProcessingService.voidPayment
-        throw new UnsupportedOperationException("Not implemented");
+        paymentsProcessingService.voidPayment(mapper.asVoidPaymentInput(payload));
     }
 
     @Override
     public void doVoidPayment(PaymentCaptureFailed payload, PaymentCaptureFailedHeaders headers) {
-        // TODO CUSTOM_REQUIRED: map payload to VoidPaymentInput and call paymentsProcessingService.voidPayment
-        throw new UnsupportedOperationException("Not implemented");
+        paymentsProcessingService.voidPayment(mapper.asVoidPaymentInput(payload));
     }
 }

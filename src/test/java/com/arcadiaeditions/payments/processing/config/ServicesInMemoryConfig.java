@@ -4,6 +4,9 @@ import com.arcadiaeditions.payments.processing.asyncapi.provider.*;
 import com.arcadiaeditions.payments.processing.core.application.*;
 import com.arcadiaeditions.payments.processing.core.domain.*;
 import com.arcadiaeditions.payments.processing.core.inbound.*;
+import com.arcadiaeditions.payments.processing.core.outbound.processor.PaymentProcessor;
+import com.arcadiaeditions.payments.processing.infrastructure.processor.StandInPaymentProcessor;
+import java.time.Duration;
 import java.util.List;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -18,8 +21,14 @@ public class ServicesInMemoryConfig extends RepositoriesInMemoryConfig {
 
     protected final EventsProducerInMemoryContext eventsProducerInMemoryContext = new EventsProducerInMemoryContext();
 
+    /** Stand-in processor (ADR 0002) with a short timeout. */
+    protected final PaymentProcessor paymentProcessor = new StandInPaymentProcessor(Duration.ofMillis(500));
+
     protected final PaymentsProcessingServiceImpl paymentsProcessingService = new PaymentsProcessingServiceImpl(
-            paymentRepository(), eventsProducerInMemoryContext.paymentsProcessingEventsProducer());
+            paymentRepository(),
+            eventsProducerInMemoryContext.paymentsProcessingEventsProducer(),
+            TestClock.FIXED,
+            paymentProcessor);
 
     @Bean
     public <T extends PaymentsProcessingService> T paymentsProcessingService() {

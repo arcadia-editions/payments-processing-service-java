@@ -8,12 +8,14 @@ import org.springframework.stereotype.Component;
 
 /**
  * Inbound adapter: payment-retried-event-v1 -> PaymentsProcessingService.reauthorizePayment.
- * Stub so the Spring context boots; the generator does not emit adapters for AsyncAPIGenerator interfaces.
+ * The generator does not emit adapters for AsyncAPIGenerator interfaces.
  */
 @Component
 public class PaymentRetriedConsumerService implements IPaymentRetriedEventV1ConsumerService {
 
     private final PaymentsProcessingService paymentsProcessingService;
+
+    private final PaymentRetriedConsumerMapper mapper = PaymentRetriedConsumerMapper.INSTANCE;
 
     public PaymentRetriedConsumerService(PaymentsProcessingService paymentsProcessingService) {
         this.paymentsProcessingService = paymentsProcessingService;
@@ -21,15 +23,11 @@ public class PaymentRetriedConsumerService implements IPaymentRetriedEventV1Cons
 
     @Override
     public void doReauthorizePayment(ReauthorizePaymentInput payload, ReauthorizePaymentInputHeaders headers) {
-        // TODO CUSTOM_REQUIRED: map payload to ReauthorizePaymentInput and call
-        // paymentsProcessingService.reauthorizePayment
-        throw new UnsupportedOperationException("Not implemented");
+        paymentsProcessingService.reauthorizePayment(mapper.asReauthorizePaymentInput(payload));
     }
 
     @Override
     public void doReauthorizePayment(PaymentRetried payload, PaymentRetriedHeaders headers) {
-        // TODO CUSTOM_REQUIRED: map payload to ReauthorizePaymentInput and call
-        // paymentsProcessingService.reauthorizePayment
-        throw new UnsupportedOperationException("Not implemented");
+        paymentsProcessingService.reauthorizePayment(mapper.asReauthorizePaymentInput(payload));
     }
 }

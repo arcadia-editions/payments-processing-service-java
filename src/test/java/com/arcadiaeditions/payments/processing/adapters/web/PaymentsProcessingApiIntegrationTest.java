@@ -18,7 +18,7 @@ public class PaymentsProcessingApiIntegrationTest extends BaseWebTestClientTest 
     public void testGetPaymentStatus_201() {
         String requestBody = """
             {
-              "orderId" : "orderId-bln4pod3k9e"
+              "orderId" : "ORD-001"
             }
         """;
 
@@ -35,17 +35,13 @@ public class PaymentsProcessingApiIntegrationTest extends BaseWebTestClientTest 
                 .contentType(MediaType.APPLICATION_JSON)
                 .expectBody()
                 .jsonPath("$.outcome")
-                .isNotEmpty()
-                .jsonPath("$.noPayment")
-                .isNotEmpty()
-                .jsonPath("$.noPayment.orderId")
-                .isNotEmpty()
-                .jsonPath("$.started")
-                .isNotEmpty()
+                .isEqualTo("STARTED")
                 .jsonPath("$.started.orderId")
-                .isNotEmpty()
+                .isEqualTo("ORD-001")
                 .jsonPath("$.started.status")
-                .isNotEmpty();
+                .isEqualTo("CAPTURED")
+                .jsonPath("$.noPayment")
+                .doesNotExist();
     }
 
     /**
@@ -53,9 +49,10 @@ public class PaymentsProcessingApiIntegrationTest extends BaseWebTestClientTest 
      */
     @Test
     public void testGetPaymentStatus_400() {
+        // orderId is required (@NotNull on GetPaymentStatusInputDTO). A null value is an invalid request.
         String requestBody = """
             {
-              "orderId" : "orderId-w9m"
+              "orderId" : null
             }
         """;
 
