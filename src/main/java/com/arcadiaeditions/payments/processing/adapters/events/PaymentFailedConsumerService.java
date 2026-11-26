@@ -8,12 +8,14 @@ import org.springframework.stereotype.Component;
 
 /**
  * Inbound adapter: payment-failed-event-v1 -> PaymentsProcessingService.retryPayment.
- * Stub so the Spring context boots; the generator does not emit adapters for AsyncAPIGenerator interfaces.
+ * The generator does not emit adapters for AsyncAPIGenerator interfaces.
  */
 @Component
 public class PaymentFailedConsumerService implements IPaymentFailedEventV1ConsumerService {
 
     private final PaymentsProcessingService paymentsProcessingService;
+
+    private final PaymentFailedConsumerMapper mapper = PaymentFailedConsumerMapper.INSTANCE;
 
     public PaymentFailedConsumerService(PaymentsProcessingService paymentsProcessingService) {
         this.paymentsProcessingService = paymentsProcessingService;
@@ -21,13 +23,11 @@ public class PaymentFailedConsumerService implements IPaymentFailedEventV1Consum
 
     @Override
     public void doRetryPayment(RetryPaymentInput payload, RetryPaymentInputHeaders headers) {
-        // TODO CUSTOM_REQUIRED: map payload to RetryPaymentInput and call paymentsProcessingService.retryPayment
-        throw new UnsupportedOperationException("Not implemented");
+        paymentsProcessingService.retryPayment(mapper.asRetryPaymentInput(payload));
     }
 
     @Override
     public void doRetryPayment(PaymentFailed payload, PaymentFailedHeaders headers) {
-        // TODO CUSTOM_REQUIRED: map payload to RetryPaymentInput and call paymentsProcessingService.retryPayment
-        throw new UnsupportedOperationException("Not implemented");
+        paymentsProcessingService.retryPayment(mapper.asRetryPaymentInput(payload));
     }
 }

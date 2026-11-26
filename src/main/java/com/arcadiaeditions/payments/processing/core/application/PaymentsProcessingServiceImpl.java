@@ -61,7 +61,7 @@ public class PaymentsProcessingServiceImpl implements PaymentsProcessingService 
         return clock;
     }
 
-    void setSleeper(java.util.function.Consumer<Duration> sleeper) {
+    public void setSleeper(java.util.function.Consumer<Duration> sleeper) {
         this.sleeper = sleeper;
     }
 
