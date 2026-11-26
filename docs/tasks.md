@@ -164,7 +164,8 @@ review: [ ]
       test data: data.sql (C-16 a1 to a2, C-17 a2 to a3, C-16 with stale attemptCount 2, C-11 none, C-08 wrong state)
       tests: PaymentsProcessingServiceTest#reauthorizePaymentTest
       blocked by: T-16, T-18
-- [/] T-21 mechanical AFK PaymentFailedConsumerService and PaymentRetriedConsumerService: map both messages of each own channel (RetryPaymentInput / PaymentFailed, ReauthorizePaymentInput / PaymentRetried: orderId, attemptCount) and call retryPayment / reauthorizePayment
+- [x] T-21 mechanical AFK PaymentFailedConsumerService and PaymentRetriedConsumerService: map both messages of each own channel (RetryPaymentInput / PaymentFailed, ReauthorizePaymentInput / PaymentRetried: orderId, attemptCount) and call retryPayment / reauthorizePayment
+      done: grok grok-4.7
       model: ../payments-processing-api/domain-model.zdl:165, ../payments-processing-api/domain-model.zdl:176, ../payments-processing-api/domain-model.zdl:98-108
       test data: data.sql (C-16)
       tests: PaymentFailedConsumerServiceTest, PaymentRetriedConsumerServiceTest
