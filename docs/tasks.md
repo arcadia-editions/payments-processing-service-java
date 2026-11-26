@@ -174,7 +174,8 @@ review: [ ]
       done: claude-sonnet sonnet
       fixes: .zenwave/handoff/place-order-flow/reports/review-S3.md (model axis, T-17)
       tests: PlaceOrderFlowCancelledIntegrationTest
-- [ ] T-22 bounded AFK Flow test retry loop (payments side): an OrderCreated that fails once then succeeds publishes PaymentFailed, PaymentRetried, PaymentAuthorized (attemptCount 2); one that always fails ends in PaymentRetryExhausted after 3 attempts
+- [x] T-22 bounded AFK Flow test retry loop (payments side): an OrderCreated that fails once then succeeds publishes PaymentFailed, PaymentRetried, PaymentAuthorized (attemptCount 2); one that always fails ends in PaymentRetryExhausted after 3 attempts
+      done: claude-sonnet sonnet
       model: ../arcadia-editions-architecture/business-flows/place-order-flow.zfl:114-146, ../arcadia-editions-architecture/business-flows/place-order-flow.zfl:340-344
       test data: data.sql (C-08 result shape, C-16..C-18)
       tests: PlaceOrderFlowCancelledIntegrationTest#retriesExhausted, PlaceOrderFlowRetryIntegrationTest
