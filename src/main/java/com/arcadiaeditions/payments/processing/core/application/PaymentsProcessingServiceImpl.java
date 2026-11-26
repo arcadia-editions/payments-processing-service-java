@@ -95,6 +95,11 @@ public class PaymentsProcessingServiceImpl implements PaymentsProcessingService 
         payment = paymentRepository.save(payment); // commits before calling the processor
 
         PaymentTransitions.ensureCanAuthorizePayment(payment);
+        return callProcessorAndSaveOutcome(payment);
+    }
+
+    /** Calls the processor for the AUTHORIZATION_REQUESTED payment and saves its outcome with its event. */
+    private Payment callProcessorAndSaveOutcome(Payment payment) {
         var result = paymentProcessor.authorize(new PaymentProcessor.AuthorizationRequest(
                 payment.getOrderId(),
                 payment.getPaymentMethodId(),
@@ -128,31 +133,32 @@ public class PaymentsProcessingServiceImpl implements PaymentsProcessingService 
         return payment;
     }
 
+    /**
+     * Not transactional, as authorizePayment: AUTHORIZATION_REQUESTED (attemptCount + 1) commits before the
+     * processor call.
+     */
+    @Transactional(propagation = Propagation.NOT_SUPPORTED)
     public Optional<Payment> reauthorizePayment(ReauthorizePaymentInput input) {
 
         log.debug("Request reauthorizePayment: {}", input);
 
-        // TODO CUSTOM_REQUIRED: load the Payment this transition applies to, e.g. by a correlation key in the input
-        Optional<Payment> foundPayment = Optional.empty();
-        var payment = foundPayment
-                .map(existingPayment -> {
-                    PaymentTransitions.ensureCanReauthorizePayment(existingPayment);
-                    paymentsProcessingServiceMapper.update(existingPayment, input);
-                    // TODO CUSTOM_REQUIRED: call existingPayment.setStatus(...) with one of AUTHORIZED, DECLINED,
-                    // FAILED
-                    return existingPayment;
-                })
-                .map(paymentRepository::save);
-        if (payment.isPresent()) {
-            // emit events
-            var paymentAuthorized = eventsMapper.asPaymentAuthorized(payment.get());
-            eventsProducer.onPaymentAuthorized(paymentAuthorized);
-            var paymentDeclined = eventsMapper.asPaymentDeclined(payment.get());
-            eventsProducer.onPaymentDeclined(paymentDeclined);
-            var paymentFailed = eventsMapper.asPaymentFailed(payment.get());
-            eventsProducer.onPaymentFailed(paymentFailed);
+        var found = paymentRepository.findByOrderId(input.getOrderId());
+        if (found.isEmpty()) {
+            log.debug("reauthorizePayment no Payment for orderId {}: no-op", input.getOrderId());
+            return found;
         }
-        return payment;
+        var payment = found.get();
+        if (payment.getStatus() != PaymentStatus.FAILED
+                || !Objects.equals(input.getAttemptCount(), payment.getAttemptCount())) {
+            log.debug("reauthorizePayment redelivery or stale input for orderId {}: no-op", input.getOrderId());
+            return found;
+        }
+        payment.setStatus(PaymentStatus.AUTHORIZATION_REQUESTED);
+        payment.setAttemptCount(payment.getAttemptCount() + 1);
+        payment = paymentRepository.save(payment); // commits before calling the processor
+
+        PaymentTransitions.ensureCanReauthorizePayment(payment);
+        return Optional.of(callProcessorAndSaveOutcome(payment));
     }
 
     static final int MAX_ATTEMPTS = 3;
