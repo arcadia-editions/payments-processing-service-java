@@ -28,7 +28,7 @@ The flow also references the other contexts' ZDLs: `../orders-checkout-api`, `..
 
 **`zenwave-scripts.zw` and `pom.xml` read the models from a released package** (`@import(...)` and `classpath:`):
 
-- artifact and version: `com.arcadiaeditions.payments.payment-processing.payments-processing:service-all:0.2.0` (the
+- artifact and version: `com.arcadiaeditions.payments.payment-processing.payments-processing:service-all:0.2.2` (the
   `@import` of `zenwave-scripts.zw` and `pom.xml` `payments-processing-api.version` must match). No other context's
   package is needed: every Avro schema here (own and consumed) has primitive fields only, so there are no
   `avroCompilerProperties.imports`. Repository: `https://maven.pkg.github.com/arcadia-editions/arcadia-editions-architecture`
