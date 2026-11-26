@@ -64,7 +64,8 @@ path: OrderCreated > authorizePayment[authorized] > PaymentAuthorized > confirmO
       > capturePayment > PaymentCaptured > sendOrderConfirmation > end completed
 review: [ ]
 
-- [/] T-09 advanced AFK authorizePayment authorized: creation only (no-op, no event, when a Payment for orderId exists in any state); save AUTHORIZATION_REQUESTED with attemptCount 1 and commit before calling the processor; on AUTHORIZED set providerReference + authorizedAt, persist, emit only PaymentAuthorized (not every alternative, as generated)
+- [x] T-09 advanced AFK authorizePayment authorized: creation only (no-op, no event, when a Payment for orderId exists in any state); save AUTHORIZATION_REQUESTED with attemptCount 1 and commit before calling the processor; on AUTHORIZED set providerReference + authorizedAt, persist, emit only PaymentAuthorized (not every alternative, as generated)
+      done: claude-opus opus
       model: ../arcadia-editions-architecture/business-flows/place-order-flow.zfl:114-121, ../payments-processing-api/domain-model.zdl:149-158, ../payments-processing-api/domain-model.zdl:89-96, ../payments-processing-api/domain-model.zdl:201-209
       test data: data.sql (C-02 redelivery; a new orderId such as ORD-099 for creation)
       tests: PaymentsProcessingServiceTest#authorizePaymentTest
