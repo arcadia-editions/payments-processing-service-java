@@ -12,6 +12,7 @@ import com.arcadiaeditions.payments.processing.core.outbound.jpa.*;
 import com.arcadiaeditions.payments.processing.core.outbound.processor.PaymentProcessor;
 import com.arcadiaeditions.payments.processing.events.avro.PaymentAuthorized;
 import com.arcadiaeditions.payments.processing.events.avro.PaymentCaptured;
+import com.arcadiaeditions.payments.processing.events.avro.PaymentDeclined;
 import com.arcadiaeditions.payments.processing.infrastructure.jpa.inmemory.*;
 import com.arcadiaeditions.payments.processing.infrastructure.processor.StandInPaymentProcessor;
 import java.math.BigDecimal;
@@ -85,6 +86,35 @@ class PaymentsProcessingServiceTest {
         assertEquals("CUST-099", event.getCustomerId().toString());
         assertEquals("STANDIN-ORD-099", event.getProviderReference().toString());
         assertEquals(TestClock.NOW.toString(), event.getAuthorizedAt().toString());
+    }
+
+    @Test
+    void authorizePaymentDeclinedTest() {
+        var producer = context.getEventsProducerInMemoryContext().paymentsProcessingEventsProducer();
+        var payment = paymentsProcessingService.authorizePayment(
+                newAuthorizePaymentInput("ORD-098").setPaymentMethodId("pm_decline"));
+
+        var saved = paymentRepository.findByOrderId("ORD-098").orElseThrow();
+        assertEquals(saved.getId(), payment.getId());
+        assertEquals(PaymentStatus.DECLINED, saved.getStatus());
+        assertEquals(1, saved.getAttemptCount());
+        assertEquals(TestClock.NOW, saved.getDeclinedAt());
+        assertEquals("card_declined", saved.getFailureReason());
+        assertNull(saved.getAuthorizedAt());
+        assertNull(saved.getFailedAt());
+
+        assertEquals(1, producer.getOnPaymentDeclinedCapturedMessages().size());
+        assertEquals(
+                1,
+                producer.getCapturedMessages().values().stream()
+                        .mapToInt(List::size)
+                        .sum());
+        var event = (PaymentDeclined)
+                producer.getOnPaymentDeclinedCapturedMessages().get(0).getPayload();
+        assertEquals("ORD-098", event.getOrderId().toString());
+        assertEquals("CUST-099", event.getCustomerId().toString());
+        assertEquals("card_declined", event.getReason().toString());
+        assertEquals(TestClock.NOW.toString(), event.getDeclinedAt().toString());
     }
 
     @Test
